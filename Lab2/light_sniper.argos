@@ -47,24 +47,24 @@
     <box id="bs" size="0.1, 4, 0.2" movable="false">
       <body position="-1.9,0,0" orientation="0,0,0" />
     </box>
-   <!--  <box id="bs2" size="0.1, 2.5, 0.1" movable="false">
+    <box id="bs2" size="0.1, 2.5, 0.1" movable="false">
       <body position="1.0,-1.0,0" orientation="0,0,0" />
-    </box> -->
+    </box>
     <box id="be" size="4, 0.1, 0.2" movable="false">
       <body position="0,-1.9,0" orientation="0,0,0" />
     </box>
     <box id="bw" size="4, 0.1, 0.2" movable="false">
       <body position="0,1.9,0" orientation="0,0,0" />
     </box>
-    <!-- <box id="bw2" size="2.5, 0.1, 0.1" movable="false">
+    <box id="bw2" size="2.5, 0.1, 0.1" movable="false">
       <body position="0,0.5,0" orientation="0,0,0" />
-    </box> -->
+    </box>
 
     
     <distribute>
-      <position method="uniform" min="-1.5,-1.5,0.5" max="1.5,1.5,0.5" />
-<!--       <position method="uniform" min="1.2,1.2,0.5" max="1.2, 1.2, 0.5" />
- -->      <orientation method="uniform" min="0,0,0" max="0,0,0" />
+<!--       <position method="uniform" min="-1.5,-1.5,0.5" max="1.5,1.5,0.5" />
+ -->      <position method="uniform" min="1.2,1.2,0.5" max="1.2, 1.2, 0.5" />
+      <orientation method="uniform" min="0,0,0" max="0,0,0" />
       <entity quantity="1" max_trials="100">
         <light id="light" color="yellow"
            intensity="1"
@@ -76,7 +76,7 @@
       <position method="uniform" min="-2,-2,0" max="2,2,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
       <entity quantity="20" max_trials="100">
-        <box id="o" size="0.2, 0.2, 0.2" movable="false" />
+        <box id="o" size="0.1, 0.1, 0.1" movable="false" />
       </entity>
     </distribute>
 <!--     Place the robot in a given precise position -->

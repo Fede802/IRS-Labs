@@ -28,7 +28,6 @@ end
 
 function move_with(movement_action)
 	n_steps = n_steps + 1
-	local max_value, max_index = robot.light.max_with_index()
 	if n_steps % MOVE_STEPS == 0 then
 		n_steps = 0
 		movement_action()		

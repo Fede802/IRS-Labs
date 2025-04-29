@@ -74,7 +74,7 @@ function step()
     local v1, w1 = proximity_vector_field()
     local v2, w2, stand = light_vector_field()
     local v_polar_coordinate = vector.vec2_polar_sum({length = v1, angle = w1}, {length = v2, angle = w2})
-    local v = v_polar_coordinate.length * 15
+    local v = v_polar_coordinate.length 
     local w = v_polar_coordinate.angle / 2
 	if v == 0 and not stand then
 		if n_steps % MOVE_STEPS == 0 then 

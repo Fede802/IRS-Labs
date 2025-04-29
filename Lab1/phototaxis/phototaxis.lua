@@ -20,7 +20,7 @@ end
 function findMaxValue(arr)
     local maxVal = arr[1].value  -- Start with the first element's value
     local maxIdx = 0
-    for i = 2, #arr do
+    for i = 1, #arr do
         if arr[i].value > maxVal then
             maxVal = arr[i].value
             maxIdx = i

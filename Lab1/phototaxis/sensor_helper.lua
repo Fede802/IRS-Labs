@@ -2,7 +2,7 @@ local sensor_helper = {}
 
 function sensor_helper.extend(sensor_list)
     local extensions = {
-        sum = sum_sensor_values(sensor_list),
+        sum = function() return sum_sensor_values(sensor_list) end,
         max_with_index = function(threshold, start_index, end_index)
                 return find_max_value_in(sensor_list, threshold, start_index, end_index)
               end

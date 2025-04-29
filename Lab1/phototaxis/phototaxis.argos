@@ -27,7 +27,7 @@
       </actuators>
       <sensors>
         <differential_steering implementation="default" noise_level="0.0" />
-        <footbot_light implementation="rot_z_only" show_rays="false" noise_level="0.0" />
+        <footbot_light implementation="rot_z_only" show_rays="true" noise_level="0.0" />
 	<positioning implementation="default" noise_level="0.0" />
       </sensors>
       <params script="phototaxis.lua" />

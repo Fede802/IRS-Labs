@@ -17,6 +17,14 @@ function step()
     handle_collision()
 end
 
+function handle_walk()
+	n_steps = n_steps + 1
+	if n_steps % MOVE_STEPS == 0 then
+		n_steps = 0
+		robot.set_random_wheel_velocity(MAX_VELOCITY)		
+	end
+end
+
 function handle_collision(threshold)
 	local threshold = threshold or 0.0
 	local max_left_proximity, max_left_proximity_index = robot.proximity.max_with_index(threshold, 1, 7)
@@ -30,14 +38,6 @@ function handle_collision(threshold)
 		end
 	else
 		robot.leds.set_all_colors("black")
-	end
-end
-
-function handle_walk()
-	n_steps = n_steps + 1
-	if n_steps % MOVE_STEPS == 0 then
-		n_steps = 0
-		robot.set_random_wheel_velocity(MAX_VELOCITY)		
 	end
 end
 

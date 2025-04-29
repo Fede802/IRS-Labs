@@ -42,11 +42,8 @@ function find_max_value_in(sensor_list, sensor_threshold, start_index, end_index
     local max_value = sensor_threshold or sensor_list[1].value
     local start_index = start_index or 1
     local end_index = end_index or #sensor_list
-    local max_index = nil
-	if sensor_threshold == nil then
-		max_index = start_index
-	end	
-
+    local max_index = sensor_threshold and nil or start_index
+	
     for i = start_index, end_index do
         if sensor_list[i].value > max_value then
             max_value = sensor_list[i].value

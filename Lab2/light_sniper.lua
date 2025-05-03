@@ -94,10 +94,13 @@ function step()
         local sensed_angle = max_proximity_index and robot.proximity.angle_for(max_proximity_index) or -2 * reference_angle
         sensors = max_proximity_index and sensor_helper.default_two_sensor_group[max_proximity_index] or {0,0}
         local angle_diff = reference_angle + sensed_angle
-        log(sensor_helper.default_two_sensor_group[max_proximity_index][1])
-        log(sensor_helper.default_two_sensor_group[max_proximity_index][2])
-        log("reference_angle = " .. reference_angle .. " sensed_angle = " .. sensed_angle .. " angle_diff = " .. angle_diff) -- .. "sensors = " .. sensor_helper.default_two_sensor_group[max_proximity_index])
-        robot.point_to({length = 2, angle = angle_diff })
+        local angle_k if max_proximity > 0.2 then angle_k = 10 else angle_k = 1 end
+        log("angle_diff = " .. angle_diff)
+        local velocity_k = max_proximity_index and max_proximity > 0.2 and angle_diff > 0.1 and 0.0 or MAX_VELOCITY
+        -- log(sensor_helper.default_two_sensor_group[max_proximity_index][1])
+        -- log(sensor_helper.default_two_sensor_group[max_proximity_index][2])
+        -- log("reference_angle = " .. reference_angle .. " sensed_angle = " .. sensed_angle .. " angle_diff = " .. angle_diff) -- .. "sensors = " .. sensor_helper.default_two_sensor_group[max_proximity_index])
+        robot.point_to({length = velocity_k , angle = angle_diff * angle_k})
         -- robot.set_random_wheel_velocity(MAX_VELOCITY)
     else
         light_found = max_proximity_index ~= nil

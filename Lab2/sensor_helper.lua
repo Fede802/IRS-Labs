@@ -5,36 +5,29 @@ sensor_helper.default_two_sensor_group = {{1, 24}, {2,3}, {4, 5}, {6, 7}, {8, 9}
 
 function sensor_helper.extend(sensor_list, sensor_group)
     local sensor_group = sensor_group or sensor_helper.single_sensor_group
-    local extensions = {
-        sum = function() return sum_sensor_values(sensor_list) end,
-        max_with_index = function(threshold, start_index, end_index)
-                return find_max_value_in(sensor_list, threshold, start_index, end_index, sensor_group)
-              end,
-        max_with_index_in = function(threshold, indexes)
-                return find_max_value_in_indexes(sensor_list, threshold, indexes)
-              end,
-        angle_for = function(sensor_index)
-                local total = 0
-                for i = 1, #sensor_group[sensor_index] do
-                    total = total + sensor_list[sensor_group[sensor_index][i]].value
-                end
+    local extensions = {}
+    extensions.sum = function(indexes) return sum_sensor_values(sensor_list, indexes) end
+    extensions.max_with_index = function(threshold, start_index, end_index)
+            return find_max_value_in(sensor_list, threshold, start_index, end_index, sensor_group) end
+    extensions.max_with_index_in = function(threshold, indexes)
+            return find_max_value_in_indexes(sensor_list, threshold, indexes) end
+    extensions.angle_for = function(sensor_index)
+                local sensor_total_value = extensions.sum(sensor_group[sensor_index])
                 local angle = 0.0
                 for i = 1, #sensor_group[sensor_index] do
                     local sensor = sensor_list[sensor_group[sensor_index][i]]
-                    local weight = sensor.value / total
+                    local weight = sensor.value / sensor_total_value
                     angle = angle + weight * sensor.angle --sensor_list[sensor_group[sensor_index][i]].angle 
                 end
                 return angle -- / #sensor_group[sensor_index]
-              end,      
-        has_right_perception = function(threshold)
-                local _, max_index = find_max_value_in(sensor_list, threshold, 13, 24)
-                return max_index ~= nil
-              end,
-        has_left_perception = function(threshold)
-                local _, max_index = find_max_value_in(sensor_list, threshold, 1, 12)
-                return max_index ~= nil
-              end                        
-    }
+              end  
+    extensions.has_right_perception = function(threshold)
+            local _, max_index = find_max_value_in(sensor_list, threshold, 13, 24)
+            return max_index ~= nil end
+    extensions.has_left_perception = function(threshold)
+            local _, max_index = find_max_value_in(sensor_list, threshold, 1, 12)
+            return max_index ~= nil end                        
+    
 
     return setmetatable(sensor_list, {
         __index = function(_, key)
@@ -52,10 +45,11 @@ function sensor_helper.is_left_sensor(sensor_index)
     return sensor_index >= 1 and sensor_index <= 12
 end
 
-function sum_sensor_values(sensor_list)
+function sum_sensor_values(sensor_list, indexes)
+    local indexes = indexes or sensor_helper.single_sensor_group
     local total = 0
-    for i = 1, #sensor_list do
-        total = total + sensor_list[i].value
+    for i = 1, #indexes do
+        total = total + sensor_list[indexes[i]].value
     end
     return total
 end

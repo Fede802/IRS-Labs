@@ -7,7 +7,7 @@ local light_threshold = 0.0
 local robot_helper = require "robot_helper"
 local sensor_helper = require "sensor_helper"
 local n_steps = 0
-robot = robot_helper.extend(robot)
+robot = robot_helper.extend(robot, {proximity_sensor_group = sensor_helper.default_two_sensor_group})
 
 function init()
     n_steps = 0
@@ -19,56 +19,6 @@ function init()
 	robot.leds.set_all_colors("black")
 end
 
--- function findMaxValue(arr)
---     local maxVal = arr[1].value -- Start with the first element's value
---     local maxIdx = 0
---     for i = 2, #arr do
---         if arr[i].value > maxVal then
---             maxVal = arr[i].value
---             maxIdx = i
---         end
---     end
-
---     return maxVal, maxIdx
--- end
--- function findMaxValue2(arr)
---     local maxVal = 0 -- Start with the first element's value
---     local maxIdx = 0
---     for i = 1, 7 do
---         if arr[i].value > maxVal then
---             maxVal = arr[i].value
---             maxIdx = i
---         end
---     end
---     for i = 18, 24 do
---         if arr[i].value > maxVal then
---             maxVal = arr[i].value
---             maxIdx = i
---         end
---     end
-
---     return maxVal, maxIdx
--- end
-
--- function isObstacleInFront(arr)
---     proximity_threshold = 0
---     if arr[1].value > proximity_threshold or arr[2].value > proximity_threshold or arr[23].value > proximity_threshold or arr[24].value >
---         proximity_threshold then return true end
---     return false
--- end
--- function isObstacleOnTheRight(arr)
---     proximity_threshold = 0
---     free = false
---     for i = 17, 20 do
---         log(arr[i].value)
---         if arr[i].value > proximity_threshold then free = true end
---     end
---     return free
--- end
--- function turnLeft() robot.wheels.set_velocity(-110, 110) end
--- function turnRight() robot.wheels.set_velocity(110, -110) end
-
--- new things
 function phototaxis_movement()
     local max_value, max_index = robot.light.max_with_index(light_threshold)
     if max_index == nil then 
@@ -134,16 +84,20 @@ end
 
 local light_found = false
 local avoiding_obstacle_when_phototaxis = false
+local reference_angle = (robot.proximity[6].angle + robot.proximity[7].angle) / 2
 function step()
     for i = 1, #robot.proximity do
         print(i .. " " .. robot.proximity[i].angle)
     end
     local max_proximity, max_proximity_index = robot.proximity.max_with_index(proximity_threshold)
     if light_found then
-        local reference_angle = robot.proximity[8].angle
-        local sensed_angle = max_proximity_index and robot.proximity[max_proximity_index].angle or -2 * reference_angle
+        local sensed_angle = max_proximity_index and robot.proximity.angle_for(max_proximity_index) or -2 * reference_angle
+        sensors = max_proximity_index and sensor_helper.default_two_sensor_group[max_proximity_index] or {0,0}
         local angle_diff = reference_angle + sensed_angle
-        robot.point_to({length = 5, angle = angle_diff })
+        log(sensor_helper.default_two_sensor_group[max_proximity_index][1])
+        log(sensor_helper.default_two_sensor_group[max_proximity_index][2])
+        log("reference_angle = " .. reference_angle .. " sensed_angle = " .. sensed_angle .. " angle_diff = " .. angle_diff) -- .. "sensors = " .. sensor_helper.default_two_sensor_group[max_proximity_index])
+        robot.point_to({length = 2, angle = angle_diff })
         -- robot.set_random_wheel_velocity(MAX_VELOCITY)
     else
         light_found = max_proximity_index ~= nil
@@ -165,65 +119,6 @@ function step()
     -- else
     --     handle_collision_when_phototaxis()
     -- end
-
-    -- --[[	n_steps = n_steps + 1 ]]
-    -- max_valuel, max_idxl = findMaxValue(robot.light)
-    -- --[[ log("robot.max_light = " .. max_valuel)	
-	-- log("turn_count = " .. turn_count) ]]
-    -- if max_idxl > 0 then
-    --     aa = robot.proximity[max_idxl].value
-    --     log("prox = " .. aa)
-    -- end
-    -- max_valuep, max_idxp = findMaxValue2(robot.proximity)
-    -- if isObstacleInFront(robot.proximity) then
-    --     if not find_obstacle then
-    --         find_obstacle = true
-    --         turn_count = turn_count + 1
-    --     end
-    --     turn_count = turn_count + 1
-    --     turnLeft()
-
-    -- elseif turn_count < 2 and max_idxl > 0 and robot.proximity[max_idxl].value <=
-    --     0.1 then
-    --     turn_count = 0
-    --     find_obstacle = false
-    --     log("obs")
-    --     angle = robot.light[max_idxl].angle
-    --     wheeldistance = robot.wheels.axis_length
-    --     local k = 0.5
-    --     w = k * angle
-    --     local v = 10
-    --     left_v = v - (w * wheeldistance / 2)
-    --     right_v = v + (w * wheeldistance / 2)
-    --     robot.wheels.set_velocity(left_v, right_v)
-    -- elseif find_obstacle then
-    --     if isObstacleOnTheRight(robot.proximity) then
-    --         robot.wheels.set_velocity(20, 20)
-    --         should_turn = true
-    --     elseif not isObstacleOnTheRight(robot.proximity) then
-    --         if should_turn then
-    --             if n_steps > 3 then
-    --                 n_steps = 0
-    --                 turn_count = turn_count - 1
-    --                 if turn_count == 0 then
-    --                     find_obstacle = false
-    --                 end
-    --                 turnRight()
-    --                 should_turn = false
-    --             else
-    --                 n_steps = n_steps + 1
-    --                 robot.wheels.set_velocity(20, 20)
-    --             end
-    --         else
-    --             robot.wheels.set_velocity(20, 20)
-    --         end
-    --     end
-    -- else
-    --     left_v = robot.random.uniform(0, MAX_VELOCITY)
-    --     right_v = robot.random.uniform(0, MAX_VELOCITY)
-    --     robot.wheels.set_velocity(left_v, right_v)
-    -- end
-
 end
 
 

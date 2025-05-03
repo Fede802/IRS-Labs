@@ -1,9 +1,9 @@
 local sensor_helper = require "sensor_helper"
 local robot_helper = {}
 
-function robot_helper.extend(robot)
-    robot.light = robot.light and sensor_helper.extend(robot.light)
-    robot.proximity = robot.proximity and sensor_helper.extend(robot.proximity)
+function robot_helper.extend(robot, configuration)
+    robot.light = robot.light and sensor_helper.extend(robot.light, configuration.light_sensor_group)
+    robot.proximity = robot.proximity and sensor_helper.extend(robot.proximity, configuration.proximity_sensor_group)
     local extensions = {
         set_random_wheel_velocity = function(max_velocity) return set_random_wheel_velocity(robot, max_velocity) end,
         point_to = function(vector) return point_to(robot, vector) end,

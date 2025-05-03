@@ -1,7 +1,7 @@
 local sensor_helper = {}
 
 sensor_helper.single_sensor_group = {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}, {21}, {22}, {23}, {24}}
-sensor_helper.default_two_sensor_group = {{0, 24}, {2,3}, {4, 5}, {6, 7}, {8, 9}, {10, 11}, {12, 13}, {14, 15}, {16, 17}, {18, 19}, {20, 21}, {22, 23}}
+sensor_helper.default_two_sensor_group = {{1, 24}, {2,3}, {4, 5}, {6, 7}, {8, 9}, {10, 11}, {12, 13}, {14, 15}, {16, 17}, {18, 19}, {20, 21}, {22, 23}}
 
 function sensor_helper.extend(sensor_list, sensor_group)
     local sensor_group = sensor_group or sensor_helper.single_sensor_group
@@ -13,6 +13,19 @@ function sensor_helper.extend(sensor_list, sensor_group)
         max_with_index_in = function(threshold, indexes)
                 return find_max_value_in_indexes(sensor_list, threshold, indexes)
               end,
+        angle_for = function(sensor_index)
+                local total = 0
+                for i = 1, #sensor_group[sensor_index] do
+                    total = total + sensor_list[sensor_group[sensor_index][i]].value
+                end
+                local angle = 0.0
+                for i = 1, #sensor_group[sensor_index] do
+                    local sensor = sensor_list[sensor_group[sensor_index][i]]
+                    local weight = sensor.value / total
+                    angle = angle + weight * sensor.angle --sensor_list[sensor_group[sensor_index][i]].angle 
+                end
+                return angle -- / #sensor_group[sensor_index]
+              end,      
         has_right_perception = function(threshold)
                 local _, max_index = find_max_value_in(sensor_list, threshold, 13, 24)
                 return max_index ~= nil
@@ -67,14 +80,24 @@ function find_max_value_in(sensor_list, sensor_threshold, start_index, end_index
     local end_index = end_index or #sensor_group
     local max_index = nil
     for i = start_index, end_index do
+        -- avg strategy
+        -- local inner_sum = 0.0
+        -- for j = 1, #sensor_group[i] do
+        --             inner_sum = inner_sum + sensor_list[sensor_group[i][j]].value 
+        -- end
+        -- inner_sum = inner_sum / #sensor_group[i]    
+        -- if inner_sum > max_value then
+        --     max_value = inner_sum
+        --     max_index = i
+        -- end
+        -- max strategy
+        local index = sensor_group[i][1]
         for j = 1, #sensor_group[i] do
-            local index = sensor_group[i][j]
-            -- max startegy instead of avg statetgy
             if sensor_list[index].value > max_value then
                 max_value = sensor_list[index].value
                 max_index = i
             end
-        end
+        end    
     end
     return max_value, max_index
 end

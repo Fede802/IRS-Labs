@@ -75,12 +75,13 @@ function step()
     for i = 1, #robot.proximity do
         print(i .. " " .. robot.proximity[i].angle)
     end
-    local max_proximity, max_proximity_index = robot.proximity.max_with_index({threshold = proximity_threshold, sensor_group = sensor_helper.default_two_sensor_group})
+    local sensor_group = sensor_helper.default_two_sensor_group
+    local max_proximity, max_proximity_index = robot.proximity.max_with_index({threshold = proximity_threshold, sensor_group = sensor_group})
     if light_found then
-        local sensed_angle = max_proximity_index and robot.proximity.angle_for(max_proximity_index) or -2 * reference_angle
+        local sensed_angle = max_proximity_index and robot.proximity.angle_considering(sensor_group[max_proximity_index]) or -2 * reference_angle
         sensors = max_proximity_index and sensor_helper.default_two_sensor_group[max_proximity_index] or {0,0}
         local angle_diff = reference_angle + sensed_angle
-        local angle_k if max_proximity > 0.2 then angle_k = 10 else angle_k = 1 end
+        local angle_k if max_proximity > 0.2 then angle_k = 10 else angle_k = 0.8 end
         log("angle_diff = " .. angle_diff)
         local velocity_k = max_proximity_index and max_proximity > 0.2 and angle_diff > 0.1 and 0.0 or MAX_VELOCITY
         -- log(sensor_helper.default_two_sensor_group[max_proximity_index][1])

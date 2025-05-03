@@ -72,13 +72,13 @@
       </entity>
     </distribute>
     
-    <distribute>
+    <!-- <distribute>
       <position method="uniform" min="-2,-2,0" max="2,2,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
       <entity quantity="20" max_trials="100">
         <box id="o" size="0.1, 0.1, 0.1" movable="false" />
       </entity>
-    </distribute>
+    </distribute> -->
 <!--     Place the robot in a given precise position -->
 <!--    <foot-bot id="fb">
       <controller config="lua" />
@@ -89,7 +89,7 @@
 <!--     If you want to place the robot(s) in a random position you may want to use this piece of code -->
 <!-- 	The number of robots can be specificed by changing the field quantity in entity -->
     <distribute>
-      <position method="uniform" min="0,0,0" max="0,0,0" />
+      <position method="uniform" min="0.5,0,0" max="0.5,0,0" />
       <orientation method="uniform" min="0,0,0" max="0,0,0" />
       <entity quantity="1" max_trials="100">
         <foot-bot id="fb">

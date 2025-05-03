@@ -1,7 +1,7 @@
 MOVE_STEPS = 15
 MAX_VELOCITY = 10
-LIGHT_THRESHOLD = 1.5
 
+local proximity_threshold = 0.0
 local robot_helper = require "robot_helper"
 local n_steps = 0
 robot = robot_helper.extend(robot)
@@ -14,7 +14,7 @@ end
 
 function step()
 	handle_walk()
-    handle_collision()
+    handle_collision(proximity_threshold)
 end
 
 function handle_walk()

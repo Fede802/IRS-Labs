@@ -67,7 +67,7 @@ function handle_collision()
         if max_left_proximity > max_right_proximity then
             robot.wheels.set_velocity(MAX_VELOCITY / 2, - MAX_VELOCITY / 2)
         else
-            robot.wheels.set_velocity(MAX_VELOCITY / 2, - MAX_VELOCITY / 2)
+            robot.wheels.set_velocity(- MAX_VELOCITY / 2,  MAX_VELOCITY / 2)
         end
     end
 end

@@ -30,7 +30,7 @@ function phototaxis_movement()
     else
         max_light_percieved = math.max(max_light_percieved, max_value)
         local k = 0.5
-        robot.point_to({length = MAX_VELOCITY, angle = robot.light[max_index].angle * k})
+        robot.point_to({length = MAX_VELOCITY, angle = robot.light[max_index].angle * k, max_velocity = MAX_VELOCITY})
         light_found = true
     end
 end
@@ -68,25 +68,17 @@ function handle_collision_when_phototaxis()
     local max_proximity, max_proximity_index = robot.proximity.max_with_index({threshold = proximity_threshold, sensor_group = sensor_group})
     local sensed_angle = max_proximity_index and robot.proximity.angle_considering(sensor_group[max_proximity_index]) or -2 * reference_angle
     local angle_diff = reference_angle + sensed_angle
+    log("Sensed angle: " .. sensed_angle .. " Angle diff: " .. angle_diff)
     local angle_k if max_proximity > 0.2 then angle_k = 10 else angle_k = 0.8 end
     local velocity_k = max_proximity_index and max_proximity > 0.2 and angle_diff > 0.1 and 0.0 or MAX_VELOCITY
-    robot.point_to({length = velocity_k , angle = angle_diff * angle_k})
+    robot.point_to({length = velocity_k , angle = angle_diff * angle_k, max_velocity = MAX_VELOCITY})
     local max_value, max_index = robot.light.max_with_index({threshold = light_threshold})
     if max_index ~= nil and max_value > max_light_percieved then
-        avoiding_obstacle_when_phototaxis = false
+        -- avoiding_obstacle_when_phototaxis = false
         log("Light found, stopping avoidance")
         return
     end
 
-    -- local max_proximity, max_proximity_index = robot.proximity.max_with_index({threshold = proximity_threshold})
-    -- local max_light, max_light_index = robot.light.max_with_index({threshold = light_threshold})
-    -- max_light_index = max_light_index or 0
-    -- if max_proximity_index == nil or sensor_helper.is_left_sensor(max_light_index) and sensor_helper.is_right_sensor(max_proximity_index) then
-    --     avoiding_obstacle_when_phototaxis = false
-    --     return
-    -- end
-    -- right_angle = (robot.proximity[18].angle + robot.proximity[19].angle) / 2
-    -- robot.point_to({length = MAX_VELOCITY, angle = right_angle - robot.proximity[max_proximity_index].angle})
 end    
 
 

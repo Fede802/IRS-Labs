@@ -26,9 +26,18 @@ end
 function point_to(robot, vector)
     local wheeldistance = robot.wheels.axis_length
     local w = vector.angle
-    local v = vector.length 
+    local v = vector.length
+
     local left_v = v - (w * wheeldistance / 2)
     local right_v = v + (w * wheeldistance / 2)
+
+    local max_v = math.max(math.abs(left_v), math.abs(right_v))
+
+    if max_v > vector.max_velocity then
+        local scale = vector.max_velocity / max_v
+        left_v = left_v * scale
+        right_v = right_v * scale
+    end
     robot.wheels.set_velocity(left_v, right_v)
 end
 

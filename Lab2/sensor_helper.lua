@@ -7,8 +7,7 @@ function sensor_helper.extend(sensor_list, sensor_group)
     local sensor_group = sensor_group or sensor_helper.single_sensor_group
     local extensions = {}
     extensions.sum = function(indexes) return sum_sensor_values(sensor_list, indexes) end
-    extensions.max_with_index = function(threshold, start_index, end_index)
-            return find_max_value_in(sensor_list, threshold, start_index, end_index, sensor_group) end
+    extensions.max_with_index = function(configuration) return find_max_value_in(sensor_list, configuration) end
     extensions.angle_for = function(sensor_index)
                 local sensor_total_value = extensions.sum(sensor_group[sensor_index])
                 local angle = 0.0
@@ -51,10 +50,13 @@ end
         max_value (number): The maximum sensor value found above the threshold or the threshold if no value exceeds it.
         max_index (number or nil): The index of the maximum sensor value that exceeds the threshold, or nil if no such value is found.
 ]]
-function find_max_value_in(sensor_list, sensor_threshold, start_index, end_index, sensor_group)
-    local max_value = sensor_threshold 
-    local start_index = start_index or 1
-    local end_index = end_index or #sensor_group
+function find_max_value_in(sensor_list, configuration)
+    local threshold = configuration.threshold or 0.0
+    local sensor_group = configuration.sensor_group or sensor_helper.single_sensor_group
+    local start_index = configuration.start_index or 1
+    local end_index = configuration.end_index or #sensor_group
+
+    local max_value = threshold 
     local max_index = nil
     for i = start_index, end_index do
         -- avg strategy

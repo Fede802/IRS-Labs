@@ -9,8 +9,6 @@ function sensor_helper.extend(sensor_list, sensor_group)
     extensions.sum = function(indexes) return sum_sensor_values(sensor_list, indexes) end
     extensions.max_with_index = function(threshold, start_index, end_index)
             return find_max_value_in(sensor_list, threshold, start_index, end_index, sensor_group) end
-    extensions.max_with_index_in = function(threshold, indexes)
-            return find_max_value_in_indexes(sensor_list, threshold, indexes) end
     extensions.angle_for = function(sensor_index)
                 local sensor_total_value = extensions.sum(sensor_group[sensor_index])
                 local angle = 0.0
@@ -21,28 +19,13 @@ function sensor_helper.extend(sensor_list, sensor_group)
                 end
                 return angle -- / #sensor_group[sensor_index]
               end  
-    extensions.has_right_perception = function(threshold)
-            local _, max_index = find_max_value_in(sensor_list, threshold, 13, 24)
-            return max_index ~= nil end
-    extensions.has_left_perception = function(threshold)
-            local _, max_index = find_max_value_in(sensor_list, threshold, 1, 12)
-            return max_index ~= nil end                        
-    
-
+                            
     return setmetatable(sensor_list, {
         __index = function(_, key)
             return extensions[key]
         end
     })
 
-end
-
-function sensor_helper.is_right_sensor(sensor_index)
-    return sensor_index >= 13 and sensor_index <= 24
-end
-
-function sensor_helper.is_left_sensor(sensor_index)
-    return sensor_index >= 1 and sensor_index <= 12
 end
 
 function sum_sensor_values(sensor_list, indexes)
@@ -93,21 +76,6 @@ function find_max_value_in(sensor_list, sensor_threshold, start_index, end_index
             end
         end    
     end
-    return max_value, max_index
-end
-
-function find_max_value_in_indexes(sensor_list, sensor_threshold, indexes)
-    local max_value = sensor_threshold
-    local max_index = nil
-    
-    for i = 1, #indexes do
-        local index = indexes[i]
-        if sensor_list[index].value > max_value then
-            max_value = sensor_list[index].value
-            max_index = index
-        end
-    end
-
     return max_value, max_index
 end
 

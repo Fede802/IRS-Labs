@@ -56,11 +56,6 @@ function handle_collision(threshold)
 	end
 end
 
-function is_obstacle_in_front()
-    local _, max_index = robot.proximity.max_with_index_in(proximity_threshold, {1, 24})
-    return max_index ~= nil
-end
-
 function handle_collision_when_phototaxis()
     local max_proximity, max_proximity_index = robot.proximity.max_with_index(proximity_threshold)
     local max_light, max_light_index = robot.light.max_with_index(light_threshold)
@@ -72,15 +67,6 @@ function handle_collision_when_phototaxis()
     right_angle = (robot.proximity[18].angle + robot.proximity[19].angle) / 2
     robot.point_to({length = MAX_VELOCITY, angle = right_angle - robot.proximity[max_proximity_index].angle})
 end    
-
-
-
---     robot.wheels.set_velocity(MAX_VELOCITY / 2, -MAX_VELOCITY / 2)
---     local max_right_proximity, max_right_proximity_index = robot.proximity.max_with_index(proximity_threshold)
---     if robot.light.has_left_perception(light_threshold) and robot.light.has_right_perception(light_threshold) then
-        
---     local is_obstacle_in_front = is_obstacle_in_front()
--- end
 
 local light_found = false
 local avoiding_obstacle_when_phototaxis = false

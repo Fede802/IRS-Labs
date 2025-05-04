@@ -18,7 +18,7 @@ end
 local SensorExtension = {}
 SensorExtension.__index = SensorExtension
 
-local function SensorExtension:new(sensor_list)
+function SensorExtension:new(sensor_list)
     local instance = setmetatable(sensor_list, self)
     instance.default_single_sensor_group = default_single_sensor_group_from(sensor_list)
     instance.default_two_sensor_group = default_two_sensor_group_from(sensor_list)

@@ -1,9 +1,12 @@
--- Put your global variables here
-
 MOVE_STEPS = 15
 MAX_VELOCITY = 10
 LIGHT_THRESHOLD = 0.02
-n_steps = 0
+PROXIMITY_THRESHOLD = 0.02
+
+local robot_helper = require "robot_helper"
+local sensor_helper = require "sensor_helper"
+local n_steps = 0
+robot = robot_helper.extend(robot, MAX_VELOCITY)
 
 Behavior = {}
 Behavior.__index = Behavior
@@ -24,41 +27,15 @@ end
 
 RandomWalk = Behavior:new(1)
 function RandomWalk:senseAndDecice()
-	log("RandomWalk")
 	self.active = true
-	left_v = robot.random.uniform(0,MAX_VELOCITY)
-	right_v = robot.random.uniform(0,MAX_VELOCITY)
-	robot.wheels.set_velocity(left_v,right_v)
+	robot:set_random_wheel_velocity()
 end
 
 Phototaxis = Behavior:new(2)
-function findLight()
-    local maxVal = LIGHT_THRESHOLD  -- Start with the first element's value
-    local maxIdx = 0
-    for i = 1, #robot.light do
-        if robot.light[i].value > maxVal then
-            maxVal = robot.light[i].value
-            maxIdx = i
-        end
-    end
-    return maxVal, maxIdx
-end
+
 function Phototaxis:senseAndDecice()
-max_value, max_idx = findLight()
-	if max_idx > 0 then
-		log("Phototaxis")
-		angle = robot.light[max_idx].angle
-		wheel_distance = robot.wheels.axis_length
-		local k = 0.5
-		w = k * angle
-		local v = 10 
-		left_v = v - (w * wheel_distance / 2)
-		right_v = v + (w * wheel_distance / 2)
-		self.active = true
-		robot.wheels.set_velocity(left_v, right_v)
-	else
-		self.active = false
-	end					
+	self.active = false
+	robot:handle_phototaxis(LIGHT_THRESHOLD, function() self.active = true end)		
 end
 	
 CollisionAvoidance = Behavior:new(3)
@@ -80,23 +57,9 @@ function findObstacle()
     return maxVal, maxIdx
 end
 function CollisionAvoidance:senseAndDecice()
-max_value, max_idx = findObstacle()
-	if max_idx > 0 then
-		log("CollisionAvoidance")
-		angle = 0.5
-		wheeldistance = robot.wheels.axis_length
-		local k = 0.5
-    	w = k * angle
-		local v = 0 
-		left_v = v - (w * wheeldistance / 2)
-		right_v = v + (w * wheeldistance / 2)
-		self.active = true
-		robot.wheels.set_velocity(left_v, right_v)
-	else
-		self.active = false
-	end				
+	self.active = false
+	robot:handle_collision(PROXIMITY_THRESHOLD, function() self.active = true end)
 end
-
 
 Standing = Behavior:new(4)
 function onSpot()
@@ -139,47 +102,22 @@ function SubsumptionController:decide_action()
     return nil
 end
 
+behaviors = { RandomWalk, Phototaxis, CollisionAvoidance, Standing}
+controller = SubsumptionController:new(behaviors)
 
---[[ This function is executed every time you press the 'execute'
-     button ]]
 function init()
-	left_v = robot.random.uniform(0,MAX_VELOCITY)
-	right_v = robot.random.uniform(0,MAX_VELOCITY)
-	robot.wheels.set_velocity(left_v,right_v)
-	behaviors = { RandomWalk, Phototaxis, CollisionAvoidance, Standing}
-	controller = SubsumptionController:new(behaviors)
 	n_steps = 0
 	robot.leds.set_all_colors("black")
 end
 
 function step()
-	n_steps = n_steps + 1
-	if n_steps % MOVE_STEPS == 0 then
-		n_steps = 0
-		controller:decide_action()
-	end	
+	n_steps = robot_helper.handle_walk(function() controller:decide_action() end, n_steps, MOVE_STEPS)
 end
 
-
-
-
---[[ This function is executed every time you press the 'reset'
-     button in the GUI. It is supposed to restore the state
-     of the controller to whatever it was right after init() was
-     called. The state of sensors and actuators is reset
-     automatically by ARGoS. ]]
 function reset()
-	left_v = robot.random.uniform(0,MAX_VELOCITY)
-	right_v = robot.random.uniform(0,MAX_VELOCITY)
-	robot.wheels.set_velocity(left_v,right_v)
-	n_steps = 0
-	robot.leds.set_all_colors("black")
+	init()
 end
 
-
-
---[[ This function is executed only once, when the robot is removed
-     from the simulation ]]
 function destroy()
-   -- put your code here
+    -- do nothing
 end

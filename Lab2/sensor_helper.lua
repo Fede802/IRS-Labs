@@ -1,17 +1,6 @@
 local sensor_helper = {}
 
-sensor_helper.single_sensor_group = {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}, {21}, {22}, {23}, {24}}
-sensor_helper.default_two_sensor_group = {{1, 24}, {2,3}, {4, 5}, {6, 7}, {8, 9}, {10, 11}, {12, 13}, {14, 15}, {16, 17}, {18, 19}, {20, 21}, {22, 23}}
-
-function sensor_helper.extend(sensor_list, sensor_group)
-    local extensions = {}
-    extensions.sum = function(indexes) return sum_sensor_values(sensor_list, indexes) end
-    extensions.max_with_index = function(configuration) return find_max_value_in(sensor_list, configuration) end
-    extensions.angle_considering = function(indexes) return find_angle_considering(sensor_list, indexes) end          
-    return setmetatable(sensor_list, {__index = function(_, key) return extensions[key] end})
-end
-
-function sum_sensor_values(sensor_list, indexes)
+local function sum_sensor_values(sensor_list, indexes)
     local indexes = indexes or sensor_helper.single_sensor_group
     local total = 0
     for i = 1, #indexes do
@@ -34,7 +23,7 @@ end
         max_value (number): The maximum sensor value found above the threshold or the threshold if no value exceeds it.
         max_index (number or nil): The index of the maximum sensor value that exceeds the threshold, or nil if no such value is found.
 ]]
-function find_max_value_in(sensor_list, configuration)
+local function find_max_value_in(sensor_list, configuration)
     local threshold = configuration.threshold or 0.0
     local sensor_group = configuration.sensor_group or sensor_helper.single_sensor_group
     local start_index = configuration.start_index or 1
@@ -65,7 +54,7 @@ function find_max_value_in(sensor_list, configuration)
     return max_value, max_index
 end
 
-function find_angle_considering(sensor_list, indexes)
+local function find_angle_considering(sensor_list, indexes)
     local sensor_total_value = sum_sensor_values(sensor_list, indexes)
     local cumulative_angle = 0.0
     for i = 1, #indexes do
@@ -75,5 +64,25 @@ function find_angle_considering(sensor_list, indexes)
     end
     return cumulative_angle
 end  
+
+
+sensor_helper.single_sensor_group = {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}, {21}, {22}, {23}, {24}}
+sensor_helper.default_two_sensor_group = {{1, 24}, {2,3}, {4, 5}, {6, 7}, {8, 9}, {10, 11}, {12, 13}, {14, 15}, {16, 17}, {18, 19}, {20, 21}, {22, 23}}
+
+function sensor_helper.scale_up(value, scale)
+    if value == 0 then return 0 end
+    while math.abs(value) < scale do
+        value = value * 10
+    end
+    return value
+end
+
+function sensor_helper.extend(sensor_list, sensor_group)
+    local extensions = {}
+    extensions.sum = function(indexes) return sum_sensor_values(sensor_list, indexes) end
+    extensions.max_with_index = function(configuration) return find_max_value_in(sensor_list, configuration) end
+    extensions.angle_considering = function(indexes) return find_angle_considering(sensor_list, indexes) end          
+    return setmetatable(sensor_list, {__index = function(_, key) return extensions[key] end})
+end
 
 return sensor_helper

@@ -34,24 +34,32 @@ function SensorExtension:sum_sensor_values(indexes)
     return total
 end
 
-function SensorExtension:find_max_value_in(configuration)
+local function find_value_in(self, configuration, comparator)
     local threshold = configuration.threshold or 0.0
     local sensor_group = configuration.sensor_group or self.default_single_sensor_group
     local start_index = configuration.start_index or 1
     local end_index = configuration.end_index or #sensor_group
 
-    local max_value = threshold 
-    local max_index = nil
+    local min_value = threshold 
+    local min_index = nil
     for i = start_index, end_index do
         for j = 1, #sensor_group[i] do
             local index = sensor_group[i][j]
-            if self[index].value > max_value then
-                max_value = self[index].value
-                max_index = i
+            if comparator(self[index].value, min_value) then
+                min_value = self[index].value
+                min_index = i
             end
         end    
     end
-    return max_value, max_index
+    return min_value, min_index
+end
+
+function SensorExtension:max_with_index(configuration)
+    return find_value_in(self, configuration, function(a, b) return a > b end)
+end
+
+function SensorExtension:min_with_index(configuration)
+    return find_value_in(self, configuration, function(a, b) return a < b end)
 end
 
 function SensorExtension:find_angle_considering(indexes)

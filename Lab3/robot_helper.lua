@@ -7,6 +7,7 @@ function RobotExtension:new(robot, max_velocity)
     setmetatable(robot, self)
     robot.light = robot.light and sensor_helper.extend(robot.light)
     robot.proximity = robot.proximity and sensor_helper.extend(robot.proximity)
+    robot.motor_ground = robot.motor_ground and sensor_helper.extend(robot.motor_ground)
     robot.max_velocity = max_velocity
     return robot
 end
@@ -36,7 +37,7 @@ function RobotExtension:point_to(vector)
 end
 
 function RobotExtension:light_perception(threshold)
-    return self.light:find_max_value_in({threshold = threshold})
+    return self.light:max_with_index({threshold = threshold})
 end
 
 function RobotExtension:handle_phototaxis(threshold, on_phototaxis)
@@ -52,8 +53,8 @@ function RobotExtension:handle_phototaxis(threshold, on_phototaxis)
 end
 
 function RobotExtension:proximity_perception(threshold)
-    local max_left_proximity, _ = self.proximity:find_max_value_in({threshold = threshold, start_index = 1, end_index = 6})
-    local max_right_proximity, _ = self.proximity:find_max_value_in({threshold = threshold, start_index = 19, end_index = 24})
+    local max_left_proximity, _ = self.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 6})
+    local max_right_proximity, _ = self.proximity:max_with_index({threshold = threshold, start_index = 19, end_index = 24})
     return max_left_proximity, max_right_proximity
 end
 
@@ -81,6 +82,10 @@ function RobotExtension:handle_collision(threshold, on_collision)
     else
         self.leds.set_all_colors("black")  
     end
+end
+
+function RobotExtension:stop()
+    self.wheels.set_velocity(0, 0)
 end
 
 local robot_helper = {}

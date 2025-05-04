@@ -1,11 +1,7 @@
-MOVE_STEPS = 15
-MAX_VELOCITY = 10
-LIGHT_THRESHOLD = 0.02
-PROXIMITY_THRESHOLD = 0.02
+MAX_VELOCITY = 15
 
 local robot_helper = require "robot_helper"
 local sensor_helper = require "sensor_helper"
-local n_steps = 0
 robot = robot_helper.extend(robot, MAX_VELOCITY)
 
 Behavior = {}
@@ -25,6 +21,10 @@ function Behavior:act()
     return self.active
 end
 
+function Behavior:reset()
+	self.active = false
+end
+
 RandomWalk = Behavior:new(1)
 function RandomWalk:senseAndDecice()
 	self.active = true
@@ -32,49 +32,38 @@ function RandomWalk:senseAndDecice()
 end
 
 Phototaxis = Behavior:new(2)
-
+Phototaxis.n_steps = 0
+Phototaxis.MOVE_STEPS = 15
+Phototaxis.LIGHT_THRESHOLD = 0.02
 function Phototaxis:senseAndDecice()
-	self.active = false
-	robot:handle_phototaxis(LIGHT_THRESHOLD, function() self.active = true end)		
+	self.n_steps = robot_helper.handle_walk(function() 
+		self.active = false
+		robot:handle_phototaxis(self.LIGHT_THRESHOLD, function() self.active = true end) 
+	end, self.n_steps, self.MOVE_STEPS)
 end
-	
+function Phototaxis:reset()
+	Behavior.reset(self)
+	self.n_steps = 0
+end
+-- BUG: Double direction rotation can cause deadlock between two robots
 CollisionAvoidance = Behavior:new(3)
-function findObstacle()
-    local maxVal = 0.02  -- Start with the first element's value
-    local maxIdx = 0
-    for i = 1, 7 do
-        if robot.proximity[i].value > maxVal then
-            maxVal = robot.proximity[i].value
-            maxIdx = i
-        end
-    end
-    for i = 18, 24 do
-        if robot.proximity[i].value > maxVal then
-            maxVal = robot.proximity[i].value
-            maxIdx = i
-        end
-    end
-    return maxVal, maxIdx
-end
+CollisionAvoidance.PROXIMITY_THRESHOLD = 0.6
 function CollisionAvoidance:senseAndDecice()
 	self.active = false
-	robot:handle_collision(PROXIMITY_THRESHOLD, function() self.active = true end)
+	robot:handle_collision(self.PROXIMITY_THRESHOLD, function() self.active = true end)
 end
 
 Standing = Behavior:new(4)
-function onSpot()
-	for i=1,4 do
-		if robot.motor_ground[i].value <= 0.1 then
-			return true
-		end
-	end
-	return false
+Standing.STANDING_THRESHOLD = 0.1
+function Standing:onSpot()
+	_, min_index = robot.motor_ground:min_with_index({threshold = self.STANDING_THRESHOLD})
+	return min_index ~= nil
 end	
+
 function Standing:senseAndDecice()
-	if onSpot() then
-		log("Standing")
+	if self:onSpot() then
 		self.active = true
-		robot.wheels.set_velocity(0, 0)
+		robot:stop()
 	else
 		self.active = false
 	end				
@@ -102,16 +91,22 @@ function SubsumptionController:decide_action()
     return nil
 end
 
+function SubsumptionController:reset()
+	for _, behavior in ipairs(self.behaviors) do
+		behavior:reset()
+	end
+end
+
 behaviors = { RandomWalk, Phototaxis, CollisionAvoidance, Standing}
 controller = SubsumptionController:new(behaviors)
 
 function init()
-	n_steps = 0
+	controller:reset()
 	robot.leds.set_all_colors("black")
 end
 
 function step()
-	n_steps = robot_helper.handle_walk(function() controller:decide_action() end, n_steps, MOVE_STEPS)
+	controller:decide_action()
 end
 
 function reset()

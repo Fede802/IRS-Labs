@@ -1,20 +1,15 @@
----@diagnostic disable: undefined-global
--- Put your global variables here
 local vector = require "vector"
+local robot_helper = require "robot_helper"
+local sensor_helper = require "sensor_helper"
 
 MOVE_STEPS = 15
-MAX_VELOCITY = 10
+MAX_VELOCITY = 15
 LIGHT_THRESHOLD = 1.5
 
 n_steps = 0
+robot = robot_helper.extend(robot, MAX_VELOCITY)
 
-
---[[ This function is executed every time you press the 'execute'
-     button ]]
 function init()
-	local left_v = robot.random.uniform(0,MAX_VELOCITY)
-	local right_v = robot.random.uniform(0,MAX_VELOCITY)
-	robot.wheels.set_velocity(left_v,right_v)
 	n_steps = 0
 	robot.leds.set_all_colors("black")
 end
@@ -28,8 +23,8 @@ function proximity_vector_field()
         return (10 - robot.proximity[max_proximity_sensor_index].value) / 10, opposite_obstacle_angle
     end
     return 0, 0
-
 end
+
 function on_spot()
 	for i=1,4 do
 		if robot.motor_ground[i].value <= 0.1 then
@@ -77,12 +72,7 @@ function step()
     local v = v_polar_coordinate.length 
     local w = v_polar_coordinate.angle / 2
 	if v == 0 and not stand then
-		if n_steps % MOVE_STEPS == 0 then 
-			local left_v = robot.random.uniform(0,MAX_VELOCITY)
-			local right_v = robot.random.uniform(0,MAX_VELOCITY)
-            print("random")
-			robot.wheels.set_velocity(15, 15)
-        end
+		n_steps = robot_helper.handle_walk(function() robot:set_random_wheel_velocity() end, n_steps, MOVE_STEPS)
     else    
         local wheeldistance = robot.wheels.axis_length
         local left_v = math.max(-15, math.min( v - (w * wheeldistance / 2), 15))
@@ -105,25 +95,10 @@ function step()
 
 end
 
-
-
---[[ This function is executed every time you press the 'reset'
-     button in the GUI. It is supposed to restore the state
-     of the controller to whatever it was right after init() was
-     called. The state of sensors and actuators is reset
-     automatically by ARGoS. ]]
 function reset()
-	left_v = robot.random.uniform(0,MAX_VELOCITY)
-	right_v = robot.random.uniform(0,MAX_VELOCITY)
-	robot.wheels.set_velocity(left_v,right_v)
-	n_steps = 0
-	robot.leds.set_all_colors("black")
+	init()
 end
 
-
-
---[[ This function is executed only once, when the robot is removed
-     from the simulation ]]
 function destroy()
-   -- put your code here
+   -- do nothing
 end

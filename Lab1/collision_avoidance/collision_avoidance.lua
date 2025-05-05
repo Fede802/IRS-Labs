@@ -1,41 +1,45 @@
 MOVE_STEPS = 15
-MAX_VELOCITY = 10
+MAX_VELOCITY = 15
+PROXIMITY_THRESHOLD = 0.01
 
-local proximity_threshold = 0.0
 local robot_helper = require "robot_helper"
 local n_steps = 0
-robot = robot_helper.extend(robot)
+robot = robot_helper.extend(robot, MAX_VELOCITY)
 
 function init()
 	n_steps = 0
-	robot.set_random_wheel_velocity(MAX_VELOCITY)
+	robot.random_walk_behaviour()
 	robot.leds.set_all_colors("black")
 end
 
 function step()
-	handle_walk()
-    handle_collision(proximity_threshold)
+	n_steps = robot_helper.handle_walk(robot.random_walk_behaviour, n_steps, MOVE_STEPS)
+    handle_collision(PROXIMITY_THRESHOLD)
 end
 
-function handle_walk()
-	n_steps = n_steps + 1
-	if n_steps % MOVE_STEPS == 0 then
-		n_steps = 0
-		robot.set_random_wheel_velocity(MAX_VELOCITY)		
-	end
+function proximity_perception(threshold)
+	local max_left_value, max_left_index = robot.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 6})
+	local max_right_value, max_right_index = robot.proximity:max_with_index({threshold = threshold, start_index = 19, end_index = 24})
+	if max_left_index and max_right_index then
+		return max_left_value > max_right_value and max_left_value, max_left_index or max_right_value, max_right_index
+	elseif max_left_index then
+		return max_left_value, max_left_index
+	elseif max_right_index then
+		return max_right_value, max_right_index
+	else
+		return nil
+	end				
 end
 
 function handle_collision(threshold)
-	local threshold = threshold or 0.0
-	local max_left_proximity, max_left_proximity_index = robot.proximity.max_with_index(threshold, 1, 7)
-	local max_right_proximity, max_right_proximity_index = robot.proximity.max_with_index(threshold, 18, 24)
-	if (max_left_proximity > threshold) or (max_right_proximity > threshold) then
+	local _, max_index = proximity_perception(threshold)
+	if max_index then
+		if robot.proximity:is_left(max_index) then
+			robot:rotate_right(MAX_VELOCITY / 2)
+		else 
+			robot:rotate_left(MAX_VELOCITY / 2)
+		end	
 		robot.leds.set_all_colors("red")
-		if max_left_proximity > max_right_proximity then
-			robot.wheels.set_velocity(MAX_VELOCITY / 2, - MAX_VELOCITY / 2)
-		else
-			robot.wheels.set_velocity(MAX_VELOCITY / 2, - MAX_VELOCITY / 2)
-		end
 	else
 		robot.leds.set_all_colors("black")
 	end

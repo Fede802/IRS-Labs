@@ -1,57 +1,98 @@
-local sensor_helper = {}
-
-function sensor_helper.extend(sensor_list)
-    local extensions = {
-        sum = function() return sum_sensor_values(sensor_list) end,
-        max_with_index = function(threshold, start_index, end_index)
-                return find_max_value_in(sensor_list, threshold, start_index, end_index)
-              end
-    }
-
-    return setmetatable(sensor_list, {
-        __index = function(_, key)
-            return extensions[key]
-        end
-    })
-
+local function default_single_sensor_group_from(sensor_list)
+    local sensor_group = {}
+    for i = 1, #sensor_list do
+        sensor_group[i] = {i}
+    end
+    return sensor_group
 end
 
-function sum_sensor_values(sensor_list)
+local function default_two_sensor_group_from(sensor_list)
+    local sensor_group = {}
+    table.insert(sensor_group, {1, #sensor_list})
+    for i = 2, #sensor_list - 1, 2 do
+        table.insert(sensor_group, {i, i + 1})
+    end
+    return sensor_group
+end
+
+local SensorExtension = {}
+SensorExtension.__index = SensorExtension
+
+function SensorExtension:new(sensor_list)
+    setmetatable(sensor_list, self)
+    sensor_list.default_single_sensor_group = default_single_sensor_group_from(sensor_list)
+    sensor_list.default_two_sensor_group = default_two_sensor_group_from(sensor_list)
+    return sensor_list
+end
+
+function SensorExtension:sum(indexes)
+    local indexes = indexes or self
     local total = 0
-    for i = 1, #sensor_list do
-        total = total + sensor_list[i].value
+    for i = 1, #indexes do
+        total = total + self[i].value
     end
     return total
 end
 
---[[
-    Finds the index and value of the maximum 'value' field in a subrange of a sensor list,
-    only if the value exceeds a given threshold.
+local function find_value_in(self, configuration, condition)
+    local threshold = configuration.threshold or 0.0
+    local sensor_group = configuration.sensor_group or self.default_single_sensor_group
+    local start_index = configuration.start_index or 1
+    local end_index = configuration.end_index or #sensor_group
 
-    Parameters:
-        sensor_list (table): A list of sensors, where each element is a table containing numeric 'value' and 'angle' fields.
-        sensor_threshold (number, optional): A threshold value; only sensor values greater than this are considered. Defaults to sensor_list[1].value.
-        start_index (number, optional): The starting index (inclusive) of the range to search. Defaults to 1.
-        end_index (number, optional): The ending index (inclusive) of the range to search. Defaults to #sensor_list.
-
-    Returns:
-        max_value (number): The maximum sensor value found above the threshold or the threshold if no value exceeds it.
-        max_index (number or nil): The index of the maximum sensor value that exceeds the threshold, or nil if no such value is found.
-]]
-function find_max_value_in(sensor_list, sensor_threshold, start_index, end_index)
-    local max_value = sensor_threshold or sensor_list[1].value
-    local start_index = start_index or 1
-    local end_index = end_index or #sensor_list
-    local max_index = sensor_threshold and nil or start_index
-	
+    local searched_value = threshold 
+    local searched_index = nil
     for i = start_index, end_index do
-        if sensor_list[i].value > max_value then
-            max_value = sensor_list[i].value
-            max_index = i
-        end
+        for j = 1, #sensor_group[i] do
+            local index = sensor_group[i][j]
+            if condition(self[index].value, searched_value) then
+                searched_value = self[index].value
+                searched_index = i
+            end
+        end    
     end
+    return searched_value, searched_index
+end
 
-    return max_value, max_index
+function SensorExtension:max_with_index(configuration)
+    return find_value_in(self, configuration, function(a, b) return a > b end)
+end
+
+function SensorExtension:min_with_index(configuration)
+    return find_value_in(self, configuration, function(a, b) return a < b end)
+end
+
+function SensorExtension:is_right(sensor_index)
+    return sensor_index > #self/2
+end
+
+function SensorExtension:is_left(sensor_index)
+    return sensor_index <= #self/2
+end
+
+function SensorExtension:estimate_angle_of(indexes)
+    local sensor_total_value = self:sum_sensor_values(indexes)
+    local cumulative_angle = 0.0
+    for i = 1, #indexes do
+        local sensor = self[indexes[i]]
+        local weight = sensor.value / sensor_total_value
+        cumulative_angle = cumulative_angle + weight * sensor.angle
+    end
+    return cumulative_angle
+end
+
+local sensor_helper = {}
+
+function sensor_helper.scale_up(value, desired_oom)
+    if value == 0 then return 0 end
+    while math.abs(value) < desired_oom do
+        value = value * 10
+    end
+    return value
+end
+
+function sensor_helper.extend(sensor_list)       
+    return SensorExtension:new(sensor_list)
 end
 
 return sensor_helper

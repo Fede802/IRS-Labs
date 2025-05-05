@@ -20,9 +20,6 @@ Dw = 0.0
 Moving = false
 
 function init()
-    if Moving then
-        set_random_movement()
-    end
 	n_steps = 0
 	robot.leds.set_all_colors("black")
 end
@@ -131,10 +128,9 @@ function step()
 end
 
 function reset()
-	n_steps = 0
-	robot.leds.set_all_colors("black")
+	init()
 end
 
 function destroy()
-   -- put your code here
+   -- do nothing
 end

@@ -8,6 +8,7 @@ function RobotExtension:new(robot, max_velocity)
     robot.light = robot.light and sensor_helper.extend(robot.light)
     robot.proximity = robot.proximity and sensor_helper.extend(robot.proximity)
     robot.motor_ground = robot.motor_ground and sensor_helper.extend(robot.motor_ground)
+    robot.random_walk_behaviour = function() return robot:set_random_wheel_velocity() end
     robot.max_velocity = max_velocity
     return robot
 end

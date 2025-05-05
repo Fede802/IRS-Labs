@@ -57,7 +57,7 @@ end
 function vector.vec2_polar_dot_product(scalar, v)
 	return {
 		length = scalar * v.length,
-        angle = v.angle
+        angle = scalar * v.angle
     }
 end
 

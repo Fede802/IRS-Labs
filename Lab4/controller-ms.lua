@@ -4,7 +4,11 @@ local sensor_helper = require "sensor_helper"
 
 MOVE_STEPS = 15
 MAX_VELOCITY = 15
-LIGHT_THRESHOLD = 1.5
+LIGHT_THRESHOLD = 0.02
+PROXIMITY_THRESHOLD = 0.4
+STANDING_THRESHOLD = 0.1
+
+UNDER_LIGHT_THRESHOLD = 1.5
 
 n_steps = 0
 robot = robot_helper.extend(robot, MAX_VELOCITY)
@@ -15,84 +19,52 @@ function init()
 end
 
 function proximity_vector_field()
-    local max_proximity_sensor_index = find_max_value(robot.proximity)
-    print("proximity" .. max_proximity_sensor_index)
-    if max_proximity_sensor_index > 0 then
+    local _, max_proximity_sensor_index = robot.proximity:max_with_index({threshold = PROXIMITY_THRESHOLD})
+    if max_proximity_sensor_index then
         local obstacle_angle = robot.proximity[max_proximity_sensor_index].angle
         local opposite_obstacle_angle = (obstacle_angle + math.pi) % (2*math.pi)
-        return (10 - robot.proximity[max_proximity_sensor_index].value) / 10, opposite_obstacle_angle
+        return {length = (10 - robot.proximity[max_proximity_sensor_index].value) / 10, angle = opposite_obstacle_angle / 2}
     end
-    return 0, 0
+    return vector.null_vector
 end
-
-function on_spot()
-	for i=1,4 do
-		if robot.motor_ground[i].value <= 0.1 then
-			return true
-		end
-	end
-	return false
-end	
 
 function light_vector_field()
-    local max_light_sensor_index = find_max_value(robot.light)
-    print("light" .. max_light_sensor_index)
-    if on_spot() then
-        return 0, 0, true
+    local max_light, max_light_index = robot:light_perception(LIGHT_THRESHOLD)
+    if max_light_index then
+        local light_angle = robot.light[max_light_index].angle
+        return {length = -(-1 + max_light), angle = light_angle}
     end
-    if max_light_sensor_index > 0 then
-        local light_angle = robot.light[max_light_sensor_index].angle
-        return -(-1 + robot.light[max_light_sensor_index].value), light_angle, false
-    end
-    return 0, 0, false
+    return vector.null_vector
 end
 
-
-function find_max_value(arr)
-    local maxVal = 0.02  -- Start with the first element's value
-    local maxIdx = 0
-    for i = 1, #arr do
-        if arr[i].value > maxVal then
-            maxVal = arr[i].value
-            maxIdx = i
-        end
-    end
-    return maxIdx
+current_random_walk_field = vector.null_vector
+function random_vector_field()
+    return {length = MAX_VELOCITY, angle = robot.random.uniform(0, 2 * math.pi) - math.pi} 
 end
 
+function random_walk_vector_field()
+    n_steps = robot_helper.handle_walk(function() current_random_walk_field = random_vector_field() end, n_steps, MOVE_STEPS)
+    random_walk_condition = robot:random_walk_condition({light = LIGHT_THRESHOLD, proximity = PROXIMITY_THRESHOLD, standing = STANDING_THRESHOLD})
+    return random_walk_condition and current_random_walk_field or vector.null_vector
+end
 
-
---[[ This function is executed at each time step
-     It must contain the logic of your controller ]]
-function step()
-	n_steps = n_steps + 1
-    local v1, w1 = proximity_vector_field()
-    local v2, w2, stand = light_vector_field()
-    local v_polar_coordinate = vector.vec2_polar_sum({length = v1, angle = w1}, {length = v2, angle = w2})
-    local v = v_polar_coordinate.length 
-    local w = v_polar_coordinate.angle / 2
-	if v == 0 and not stand then
-		n_steps = robot_helper.handle_walk(function() robot:set_random_wheel_velocity() end, n_steps, MOVE_STEPS)
-    else    
-        local wheeldistance = robot.wheels.axis_length
-        local left_v = math.max(-15, math.min( v - (w * wheeldistance / 2), 15))
-        local right_v = math.max(-15, math.min( v + (w * wheeldistance / 2), 15))
-        print("detected" .. v)
-        robot.wheels.set_velocity(left_v, right_v)			
-	end
-	
-	sum = 0
-	for i=1,#robot.light do
-		sum = sum + robot.light[i].value
-	end
-	if sum > LIGHT_THRESHOLD then
+function standing_vector_field()
+    return robot:standing_condition(STANDING_THRESHOLD) and vector.null_vector or vector.unit_vector
+end
+    
+function update_lights()
+	if robot.light:sum_sensor_values() > UNDER_LIGHT_THRESHOLD then
 		robot.leds.set_all_colors("green")
 	else
-	robot.leds.set_all_colors("black")
-			
+		robot.leds.set_all_colors("black")	
 	end
+end
 
-
+function step() 
+    local motion_field = vector.vec2_polar_sum(proximity_vector_field(), light_vector_field(), random_walk_vector_field())
+    local inibition_field = standing_vector_field()
+    robot:point_to(vector.vec2_polar_dot_product(inibition_field.length, motion_field))  
+	update_lights()
 end
 
 function reset()

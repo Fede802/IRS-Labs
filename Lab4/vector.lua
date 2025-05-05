@@ -1,5 +1,6 @@
 local vector = {}
-
+vector.null_vector = {length = 0, angle = 0}
+vector.unit_vector = {length = 1, angle = 0}
 -- Summing two 2D vectors in cartesian coordinates
 function vector.vec2_sum(v1, v2)
 	local v3 = {x = 0 , y = 0}	
@@ -40,14 +41,24 @@ function vector.vec2_new_polar(length, angle)
    return vec2
 end
 
-
 -- Summing two 2D vectors in polar coordinates
-function vector.vec2_polar_sum(v1, v2)
-	local w1 = vector.polar_to_cart(v1)
-	local w2 = vector.polar_to_cart(v2)
-	local w3 = vector.vec2_sum(w1,w2)
-	local v3 = vector.cart_to_polar(w3)	
-	return v3	
+function vector.vec2_polar_sum(v1, v2, ...)
+	local vectors = {v2, ...}
+	local result = v1
+	for _, vec in ipairs(vectors) do
+		local w1 = vector.polar_to_cart(result)
+		local w2 = vector.polar_to_cart(vec)
+		local w3 = vector.vec2_sum(w1,w2)
+		result = vector.cart_to_polar(w3)
+	end		
+	return result	
+end
+
+function vector.vec2_polar_dot_product(scalar, v)
+	return {
+		length = scalar * v.length,
+        angle = v.angle
+    }
 end
 
 return vector

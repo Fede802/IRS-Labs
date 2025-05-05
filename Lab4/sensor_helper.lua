@@ -26,10 +26,10 @@ function SensorExtension:new(sensor_list)
 end
 
 function SensorExtension:sum_sensor_values(indexes)
-    local indexes = indexes or self.default_single_sensor_group
+    local indexes = indexes or self
     local total = 0
     for i = 1, #indexes do
-        total = total + self[indexes[i]].value
+        total = total + self[i].value
     end
     return total
 end
@@ -40,18 +40,18 @@ local function find_value_in(self, configuration, comparator)
     local start_index = configuration.start_index or 1
     local end_index = configuration.end_index or #sensor_group
 
-    local min_value = threshold 
-    local min_index = nil
+    local searched_value = threshold 
+    local searched_index = nil
     for i = start_index, end_index do
         for j = 1, #sensor_group[i] do
             local index = sensor_group[i][j]
-            if comparator(self[index].value, min_value) then
-                min_value = self[index].value
-                min_index = i
+            if comparator(self[index].value, searched_value) then
+                searched_value = self[index].value
+                searched_index = i
             end
         end    
     end
-    return min_value, min_index
+    return searched_value, searched_index
 end
 
 function SensorExtension:max_with_index(configuration)

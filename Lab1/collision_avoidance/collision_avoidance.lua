@@ -8,7 +8,7 @@ robot = robot_helper.extend(robot, MAX_VELOCITY)
 
 function init()
 	n_steps = 0
-	robot.random_walk_behaviour()
+	robot:set_random_wheel_velocity()
 	robot.leds.set_all_colors("black")
 end
 

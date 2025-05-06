@@ -1,3 +1,11 @@
+local function indexes_from(sensor_list)
+    local indexes = {}
+    for i = 1, #sensor_list do
+        indexes[i] = i
+    end
+    return indexes
+end
+
 local function default_single_sensor_group_from(sensor_list)
     local sensor_group = {}
     for i = 1, #sensor_list do
@@ -20,13 +28,14 @@ SensorExtension.__index = SensorExtension
 
 function SensorExtension:new(sensor_list)
     setmetatable(sensor_list, self)
+    sensor_list.sensor_indexes = indexes_from(sensor_list)
     sensor_list.default_single_sensor_group = default_single_sensor_group_from(sensor_list)
     sensor_list.default_two_sensor_group = default_two_sensor_group_from(sensor_list)
     return sensor_list
 end
 
 function SensorExtension:sum(indexes)
-    local indexes = indexes or self
+    local indexes = indexes or self.sensor_indexes
     local total = 0
     for i = 1, #indexes do
         total = total + self[i].value
@@ -71,7 +80,7 @@ function SensorExtension:is_left(sensor_index)
 end
 
 function SensorExtension:estimate_angle_of(indexes)
-    local sensor_total_value = self:sum_sensor_values(indexes)
+    local sensor_total_value = self:sum(indexes)
     local cumulative_angle = 0.0
     for i = 1, #indexes do
         local sensor = self[indexes[i]]

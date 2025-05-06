@@ -23,8 +23,8 @@ local function point_to(robot, vector)
 end
 
 local function get_proximity_perception(robot, threshold)
-    local max_left_proximity, _ = robot.proximity.max_with_index({threshold = threshold, start_index = 1, end_index = 7})
-    local max_right_proximity, _ = robot.proximity.max_with_index({threshold = threshold, start_index = 18, end_index = 24})
+    local max_left_proximity, _ = robot.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 7})
+    local max_right_proximity, _ = robot.proximity:max_with_index({threshold = threshold, start_index = 18, end_index = 24})
     return max_left_proximity, max_right_proximity
 end
 
@@ -48,9 +48,9 @@ local function handle_collision(robot, threshold, on_collision)
 	if collision_detected then
         if on_collision then on_collision() end
         avoid_collision(robot, max_left_proximity, max_right_proximity)
-        robot.leds.set_all_colors("red")
+        -- robot.leds.set_all_colors("red")
 	else
-		robot.leds.set_all_colors("black")  
+		-- robot.leds.set_all_colors("black")  
 	end
 end
 

@@ -64,6 +64,9 @@ function get_proximity_perception()
 end
 
 function adjust_velocity_and_rotation_angle(velocity, rotation_angle, configuration)
+    if configuration.max_proximity_index then 
+        log("data: velocity ", velocity, " rotation angle ", rotation_angle, " max proximity ", configuration.max_proximity, " max p index", configuration.max_proximity_index, " cond ", configuration.max_proximity > configuration.proximity_threshold_to_adjust_robot_direction )
+    end
     local velocity, rotation_angle, _ = amplify_rotation_signal(adjust_rotation_based_on_proximity(adjust_velocity_based_on_proximity(velocity, rotation_angle, configuration)))
     return velocity, rotation_angle
 end
@@ -72,22 +75,29 @@ function adjust_velocity_based_on_proximity(velocity, rotation_angle, configurat
     if configuration.max_proximity_index and 
         configuration.max_proximity > configuration.proximity_threshold_before_stop_and_only_rotate and 
         rotation_angle > configuration.rotation_angle_threshold_for_considering_robot_aligned_with_obstacle 
-    then velocity = 0.0 end
+    then
+        log("adjust_velocity_based_on_proximity") 
+        rotation_angle = math.abs(sensor_helper.scale_up(rotation_angle, configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction))
+        velocity = 0.0 
+    end
     return velocity, rotation_angle, configuration
 end
 
 function adjust_rotation_based_on_proximity(velocity, rotation_angle, configuration)    
-    if configuration.max_proximity_index and 
-        configuration.max_proximity > configuration.proximity_threshold_to_adjust_robot_direction 
-    then
-        log("STECCAAAAA") 
-        rotation_angle = math.abs(sensor_helper.scale_up(rotation_angle, configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction)) end
+    -- if configuration.max_proximity_index and 
+    --     configuration.max_proximity > configuration.proximity_threshold_to_adjust_robot_direction 
+    -- then
+    --     log("adjust_rotation_based_on_proximity1 ", rotation_angle)
+    --     rotation_angle = math.abs(sensor_helper.scale_up(rotation_angle, configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction))
+    --     log("adjust_rotation_based_on_proximity2 ", rotation_angle)
+    -- end    
     return velocity, rotation_angle, configuration
 end
 
 function amplify_rotation_signal(velocity, rotation_angle, configuration)
     if math.abs(rotation_angle) < configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction then 
-        rotation_angle = sensor_helper.scale_up(rotation_angle, configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction)
+        log("amplify_rotation_signal")
+        rotation_angle = sensor_helper.scale_up(rotation_angle, 0.01)
     end
     return velocity, rotation_angle, configuration
 end
@@ -98,7 +108,8 @@ function is_obstacle_avoided()
 end    
 
 function step()
-    if not avoiding_obstacle_when_phototaxis then
+    log("max_light_percieved ", max_light_percieved)  
+    if not avoiding_obstacle_when_phototaxis or max_light_percieved > 0.35 then
         robot.leds.set_all_colors("black")
         n_steps = robot_helper.handle_walk(phototaxis_movement, n_steps)
         robot.handle_collision(proximity_threshold, function() avoiding_obstacle_when_phototaxis = light_found end)
@@ -106,9 +117,9 @@ function step()
         robot.leds.set_all_colors("yellow")
         handle_collision_when_phototaxis({
             proximity_threshold_before_stop_and_only_rotate = 0.3,
-            rotation_angle_threshold_for_considering_robot_aligned_with_obstacle = 0.1,
+            rotation_angle_threshold_for_considering_robot_aligned_with_obstacle = 0.01,
             proximity_threshold_to_adjust_robot_direction = 0.8,
-            order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction = 0.01,
+            order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction = 0.3,
         })
     end
 end

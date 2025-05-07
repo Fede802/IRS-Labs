@@ -82,13 +82,11 @@ end
 function SensorExtension:estimate_angle_of(indexes)
     local sensor_total_value = self:sum(indexes)
     local cumulative_angle = 0.0
-    log("sensor_total_value", sensor_total_value)
     for i = 1, #indexes do
         local sensor = self[indexes[i]]
         local weight = sensor.value / sensor_total_value
         cumulative_angle = cumulative_angle + weight * sensor.angle
     end
-    log("cumulative_angle", cumulative_angle)
     return cumulative_angle
 end
 

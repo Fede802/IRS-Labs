@@ -72,13 +72,13 @@
       </entity>
     </distribute>
     
-    <distribute>
+    <!-- <distribute>
       <position method="uniform" min="-2,-2,0" max="2,2,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
       <entity quantity="20" max_trials="100">
         <box id="o" size="0.1, 0.1, 0.1" movable="false" />
       </entity>
-    </distribute>
+    </distribute> -->
 <!--     Place the robot in a given precise position -->
 <!--    <foot-bot id="fb">
       <controller config="lua" />

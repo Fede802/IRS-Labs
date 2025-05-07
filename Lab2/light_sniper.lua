@@ -1,11 +1,11 @@
 MOVE_STEPS = 15
 MAX_VELOCITY = 10
-LIGHT_THRESHOLD = 1.5
-PHOTOTAXIS_ROTATION_STRENGTH = 0.5
+PROXIMITY_THRESHOLD = 0.1
+LIGHT_THRESHOLD = 0.01
+UNDER_LIGHT_THRESHOLD = 0.3
 
-
-local proximity_threshold = 0.1
-local light_threshold = 0.01
+-- exclude behind proximity sensors and possibly improve rotation on collision_with_phototaxis
+-- maybe use the same other "under light condition"
 
 local robot_helper = require "robot_helper"
 local sensor_helper = require "sensor_helper"
@@ -14,36 +14,30 @@ local light_found = false
 local avoiding_obstacle_when_phototaxis = false
 local reference_angle = (robot.proximity[6].angle + robot.proximity[7].angle) / 2
 local max_light_percieved = 0.0
-robot = robot_helper.extend(robot, {proximity_sensor_group = sensor_helper.default_two_sensor_group})
+robot = robot_helper.extend(robot, MAX_VELOCITY)
 
 function init()
     n_steps = 0
     light_found = false
     avoiding_obstacle_when_phototaxis = false
     max_light_percieved = 0.0
-	robot.set_random_wheel_velocity(MAX_VELOCITY)
-    robot.wheels.set_velocity(MAX_VELOCITY, MAX_VELOCITY)
+	robot:set_random_wheel_velocity()
+    robot.wheels.set_velocity(MAX_VELOCITY, MAX_VELOCITY) --debug purpose
 	robot.leds.set_all_colors("black")
 end
 
 function phototaxis_movement()
-    local max_value, max_index = robot.light:max_with_index({threshold = light_threshold})
-    if max_index == nil then 
-        robot.set_random_wheel_velocity(MAX_VELOCITY)
-        light_found = false
-        robot.leds.set_all_colors("black")
-    else
-        max_light_percieved = math.max(max_light_percieved, max_value)
-        local k = 0.5
-        robot.point_to({length = MAX_VELOCITY, angle = robot.light[max_index].angle * PHOTOTAXIS_ROTATION_STRENGTH, max_velocity = MAX_VELOCITY})
-        light_found = true
-        robot.leds.set_all_colors("green")
-    end
+    light_found = false
+    robot:handle_phototaxis(LIGHT_THRESHOLD, function(max_value, max_index)
+        max_light_percieved = max_value 
+        light_found = true 
+    end)
+    if max_light_percieved > UNDER_LIGHT_THRESHOLD then robot.leds.set_all_colors("green") end
 end
 
 function handle_collision_when_phototaxis(configuration)
     local velocity, rotation_angle = compute_velocity_and_rotation_angle(configuration)
-    robot.point_to({length = velocity , angle = rotation_angle, max_velocity = MAX_VELOCITY})
+    robot:point_to({length = velocity , angle = rotation_angle})
     if is_obstacle_avoided() then avoiding_obstacle_when_phototaxis = false end
 end    
 
@@ -58,65 +52,52 @@ end
 
 function get_proximity_perception()
     local sensor_group = robot.proximity.default_two_sensor_group
-    local max_proximity, max_proximity_index = robot.proximity:max_with_index({threshold = proximity_threshold, sensor_group = sensor_group})
+    local max_proximity, max_proximity_index = robot.proximity:max_with_index({threshold = PROXIMITY_THRESHOLD, sensor_group = sensor_group})
+    -- check ~= 6 condition
     local sensed_angle = max_proximity_index and max_proximity_index ~= 6 and robot.proximity:estimate_angle_of(sensor_group[max_proximity_index]) or -2 * reference_angle
     return max_proximity, max_proximity_index, sensed_angle
 end
 
 function adjust_velocity_and_rotation_angle(velocity, rotation_angle, configuration)
-    if configuration.max_proximity_index then 
-        log("data: velocity ", velocity, " rotation angle ", rotation_angle, " max proximity ", configuration.max_proximity, " max p index", configuration.max_proximity_index, " cond ", configuration.max_proximity > configuration.proximity_threshold_to_adjust_robot_direction )
-    end
-    local velocity, rotation_angle, _ = amplify_rotation_signal(adjust_rotation_based_on_proximity(adjust_velocity_based_on_proximity(velocity, rotation_angle, configuration)))
+    local velocity, rotation_angle, _ = amplify_rotation_signal(adjust_velocity_and_angle_based_on_proximity(velocity, rotation_angle, configuration))
     return velocity, rotation_angle
 end
 
-function adjust_velocity_based_on_proximity(velocity, rotation_angle, configuration)
+function adjust_velocity_and_angle_based_on_proximity(velocity, rotation_angle, configuration)
     if configuration.max_proximity_index and 
         configuration.max_proximity > configuration.proximity_threshold_before_stop_and_only_rotate and 
         rotation_angle > configuration.rotation_angle_threshold_for_considering_robot_aligned_with_obstacle 
     then
-        log("adjust_velocity_based_on_proximity") 
         rotation_angle = math.abs(sensor_helper.scale_up(rotation_angle, configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction))
         velocity = 0.0 
     end
     return velocity, rotation_angle, configuration
 end
 
-function adjust_rotation_based_on_proximity(velocity, rotation_angle, configuration)    
-    -- if configuration.max_proximity_index and 
-    --     configuration.max_proximity > configuration.proximity_threshold_to_adjust_robot_direction 
-    -- then
-    --     log("adjust_rotation_based_on_proximity1 ", rotation_angle)
-    --     rotation_angle = math.abs(sensor_helper.scale_up(rotation_angle, configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction))
-    --     log("adjust_rotation_based_on_proximity2 ", rotation_angle)
-    -- end    
-    return velocity, rotation_angle, configuration
-end
-
 function amplify_rotation_signal(velocity, rotation_angle, configuration)
     if math.abs(rotation_angle) < configuration.order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction then 
-        log("amplify_rotation_signal")
         rotation_angle = sensor_helper.scale_up(rotation_angle, 0.01)
     end
     return velocity, rotation_angle, configuration
 end
 
 function is_obstacle_avoided()
-    local max_value, max_index = robot.light:max_with_index({threshold = light_threshold})
+    local max_value, max_index = robot.light:max_with_index({threshold = LIGHT_THRESHOLD})
     return max_index ~= nil and max_value > max_light_percieved
 end    
 
 function step()
-    log("max_light_percieved ", max_light_percieved)  
-    if not avoiding_obstacle_when_phototaxis or max_light_percieved > 0.35 then
+    if not avoiding_obstacle_when_phototaxis or max_light_percieved > UNDER_LIGHT_THRESHOLD then
         robot.leds.set_all_colors("black")
-        n_steps = robot_helper.handle_walk(phototaxis_movement, n_steps)
-        robot.handle_collision(proximity_threshold, function() avoiding_obstacle_when_phototaxis = light_found end)
+        n_steps = robot_helper.handle_walk(phototaxis_movement, n_steps, MOVE_STEPS)
+        robot:handle_collision(PROXIMITY_THRESHOLD, function() 
+            robot.leds.set_all_colors("red")
+            avoiding_obstacle_when_phototaxis = light_found 
+        end)
     else
         robot.leds.set_all_colors("yellow")
         handle_collision_when_phototaxis({
-            proximity_threshold_before_stop_and_only_rotate = 0.3,
+            proximity_threshold_before_stop_and_only_rotate = 0.7,
             rotation_angle_threshold_for_considering_robot_aligned_with_obstacle = 0.01,
             proximity_threshold_to_adjust_robot_direction = 0.8,
             order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction = 0.3,

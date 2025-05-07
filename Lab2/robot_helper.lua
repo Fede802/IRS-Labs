@@ -1,11 +1,26 @@
-local function set_random_wheel_velocity(robot, max_velocity)
-    local left_v = robot.random.uniform(0, max_velocity)
-    local right_v = robot.random.uniform(0, max_velocity)
-    robot.wheels.set_velocity(left_v, right_v)
+local sensor_helper = require "sensor_helper"
+
+local RobotExtension = {}
+RobotExtension.__index = RobotExtension
+
+function RobotExtension:new(robot, max_velocity)
+    setmetatable(robot, self)
+    robot.light = robot.light and sensor_helper.extend(robot.light)
+    robot.proximity = robot.proximity and sensor_helper.extend(robot.proximity)
+    robot.motor_ground = robot.motor_ground and sensor_helper.extend(robot.motor_ground)
+    robot.random_walk_behaviour = function() return robot:set_random_wheel_velocity() end
+    robot.max_velocity = max_velocity
+    return robot
 end
 
-local function point_to(robot, vector)
-    local wheeldistance = robot.wheels.axis_length
+function RobotExtension:set_random_wheel_velocity()
+    local left_v = self.random.uniform(0, self.max_velocity)
+    local right_v = self.random.uniform(0, self.max_velocity)
+    self.wheels.set_velocity(left_v, right_v)
+end
+
+function RobotExtension:point_to(vector)
+    local wheeldistance = self.wheels.axis_length
     local w = vector.angle
     local v = vector.length
     
@@ -14,72 +29,71 @@ local function point_to(robot, vector)
     
     local max_v = math.max(math.abs(left_v), math.abs(right_v))
     
-    if max_v > vector.max_velocity then
-        local scale = vector.max_velocity / max_v
+    if max_v > self.max_velocity then
+        local scale = self.max_velocity / max_v
         left_v = left_v * scale
         right_v = right_v * scale
     end
-    robot.wheels.set_velocity(left_v, right_v)
+    self.wheels.set_velocity(left_v, right_v)
 end
 
-local function get_proximity_perception(robot, threshold)
-    local max_left_proximity, _ = robot.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 7})
-    local max_right_proximity, _ = robot.proximity:max_with_index({threshold = threshold, start_index = 18, end_index = 24})
-    return max_left_proximity, max_right_proximity
+function RobotExtension:light_perception(threshold)
+    return self.light:max_with_index({threshold = threshold})
 end
 
-local function rotate_left(robot, velocity)
-    robot.wheels.set_velocity(-velocity, velocity)
+function RobotExtension:handle_phototaxis(threshold, on_phototaxis)
+    local max_value, max_index = self:light_perception(threshold)
+    local light_found = max_index ~= nil
+    if light_found then 
+        if on_phototaxis then on_phototaxis(max_value, max_index) end
+        local k = 0.5
+        self:point_to({length = self.max_velocity, angle = self.light[max_index].angle * k})
+    else
+        self:set_random_wheel_velocity()
+    end
 end
 
-local function rotate_right(robot, velocity)
-    rotate_left(robot, -velocity)
+function RobotExtension:proximity_perception(threshold)
+    local max_left_proximity, max_left_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 6})
+    local max_right_proximity, max_right_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 19, end_index = 24})
+    return max_left_proximity, max_left_proximity_index, max_right_proximity, max_right_proximity_index
 end
 
-local function avoid_collision(robot, max_left_proximity, max_right_proximity)
-    local obstacle_on_the_left = max_left_proximity > max_right_proximity
-    if obstacle_on_the_left then rotate_right(robot, MAX_VELOCITY / 2) else rotate_left(robot, MAX_VELOCITY / 2) end
+function RobotExtension:rotate_left(velocity)
+    self.wheels.set_velocity(-velocity, velocity)
 end
 
-local function handle_collision(robot, threshold, on_collision)
+function RobotExtension:rotate_right(velocity)
+    self:rotate_left(-velocity)
+end
+
+function RobotExtension:avoid_collision(max_left_proximity, max_right_proximity)
+    self:rotate_left(self.max_velocity / 2)
+end
+
+function RobotExtension:handle_collision(threshold, on_collision)
     local threshold = threshold or 0.0
-	local max_left_proximity, max_right_proximity = get_proximity_perception(robot, threshold)
+    local max_left_proximity, _, max_right_proximity, _ = self:proximity_perception(threshold)
     local collision_detected = max_left_proximity > threshold or max_right_proximity > threshold
-	if collision_detected then
+    if collision_detected then
         if on_collision then on_collision() end
-        avoid_collision(robot, max_left_proximity, max_right_proximity)
-        -- robot.leds.set_all_colors("red")
-	else
-		-- robot.leds.set_all_colors("black")  
-	end
+        self:avoid_collision(max_left_proximity, max_right_proximity)
+    end
 end
 
-local sensor_helper = require "sensor_helper"
 local robot_helper = {}
 
-function robot_helper.handle_walk(movement_action, n_steps)
+function robot_helper.handle_walk(movement_action, n_steps, move_steps)
     n_steps = n_steps + 1
-    if n_steps % MOVE_STEPS == 0 then
+    if n_steps % move_steps == 0 then
         n_steps = 0
         movement_action()		
     end
     return n_steps
 end
 
-function robot_helper.extend(robot, configuration)
-    robot.light = robot.light and sensor_helper.extend(robot.light, configuration.light_sensor_group)
-    robot.proximity = robot.proximity and sensor_helper.extend(robot.proximity, configuration.proximity_sensor_group)
-    local extensions = {
-        set_random_wheel_velocity = function(max_velocity) return set_random_wheel_velocity(robot, max_velocity) end,
-        point_to = function(vector) return point_to(robot, vector) end,
-        handle_collision = function(threshold, on_collision) return handle_collision(robot, threshold, on_collision) end
-    }
-
-    return setmetatable(robot, {
-        __index = function(_, key)
-            return extensions[key]
-        end
-    })
+function robot_helper.extend(robot, max_velocity)
+    return RobotExtension:new(robot, max_velocity)
 end
 
 return robot_helper

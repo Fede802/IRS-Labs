@@ -26,9 +26,11 @@ function Behavior:reset()
 end
 
 RandomWalk = Behavior:new(1)
+RandomWalk.n_steps = 0
+RandomWalk.MOVE_STEPS = 15
 function RandomWalk:senseAndDecice()
 	self.active = true
-	robot:set_random_wheel_velocity()
+	self.n_steps = robot_helper.handle_walk(robot.random_walk_behaviour, self.n_steps, self.MOVE_STEPS)
 end
 
 Phototaxis = Behavior:new(2)
@@ -45,26 +47,27 @@ function Phototaxis:reset()
 	Behavior.reset(self)
 	self.n_steps = 0
 end
--- BUG: Double direction rotation can cause deadlock between two robots
+
 CollisionAvoidance = Behavior:new(3)
 CollisionAvoidance.PROXIMITY_THRESHOLD = 0.6
 function CollisionAvoidance:senseAndDecice()
+	robot.leds.set_all_colors("black")
 	self.active = false
-	robot:handle_collision(self.PROXIMITY_THRESHOLD, function() self.active = true end)
+	robot:handle_collision(self.PROXIMITY_THRESHOLD, function() 
+		self.active = true
+		robot.leds.set_all_colors("red") 
+	end)
 end
 
 Standing = Behavior:new(4)
 Standing.STANDING_THRESHOLD = 0.1
-function Standing:onSpot()
-	_, min_index = robot.motor_ground:min_with_index({threshold = self.STANDING_THRESHOLD})
-	return min_index ~= nil
-end	
-
 function Standing:senseAndDecice()
-	if self:onSpot() then
+	if robot:standing_condition(Standing.STANDING_THRESHOLD) then
 		self.active = true
 		robot:stop()
+		robot.leds.set_all_colors("green")
 	else
+		robot.leds.set_all_colors("black")
 		self.active = false
 	end				
 end

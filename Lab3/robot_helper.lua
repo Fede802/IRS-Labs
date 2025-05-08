@@ -85,7 +85,7 @@ function RobotExtension:rotate_right(velocity)
 end
 
 function RobotExtension:avoid_collision(max_left_proximity, max_right_proximity)
-    self:rotate_leftq(self.max_velocity / 2)
+    self:rotate_left(self.max_velocity / 2)
 end
 
 function RobotExtension:handle_collision(threshold, on_collision)
@@ -95,9 +95,6 @@ function RobotExtension:handle_collision(threshold, on_collision)
     if collision_detected then
         if on_collision then on_collision() end
         self:avoid_collision(max_left_proximity, max_right_proximity)
-        self.leds.set_all_colors("red")
-    else
-        self.leds.set_all_colors("black")  
     end
 end
 

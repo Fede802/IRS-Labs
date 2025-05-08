@@ -18,6 +18,7 @@ function init()
 	robot.leds.set_all_colors("black")
 end
 
+--improve robot_helper max prosimitiy perception to return only the max value and index and the eventually use is lef or is rigth to find sensor position
 function proximity_vector_field()
     local _, max_proximity_sensor_index = robot.proximity:max_with_index({threshold = PROXIMITY_THRESHOLD})
     if max_proximity_sensor_index then
@@ -30,6 +31,7 @@ end
 
 function light_vector_field()
     local max_light, max_light_index = robot:light_perception(LIGHT_THRESHOLD)
+    log(max_light_index)
     if max_light_index then
         local light_angle = robot.light[max_light_index].angle
         return {length = -(-1 + max_light), angle = light_angle}
@@ -53,7 +55,7 @@ function standing_vector_field()
 end
     
 function update_lights()
-	if robot.light:sum_sensor_values() > UNDER_LIGHT_THRESHOLD then
+	if robot.light:sum() > UNDER_LIGHT_THRESHOLD then
 		robot.leds.set_all_colors("green")
 	else
 		robot.leds.set_all_colors("black")	

@@ -1,3 +1,11 @@
+local function indexes_from(sensor_list)
+    local indexes = {}
+    for i = 1, #sensor_list do
+        indexes[i] = i
+    end
+    return indexes
+end
+
 local function default_single_sensor_group_from(sensor_list)
     local sensor_group = {}
     for i = 1, #sensor_list do
@@ -19,22 +27,23 @@ local SensorExtension = {}
 SensorExtension.__index = SensorExtension
 
 function SensorExtension:new(sensor_list)
-    local instance = setmetatable(sensor_list, self)
-    instance.default_single_sensor_group = default_single_sensor_group_from(sensor_list)
-    instance.default_two_sensor_group = default_two_sensor_group_from(sensor_list)
-    return instance
+    setmetatable(sensor_list, self)
+    sensor_list.sensor_indexes = indexes_from(sensor_list)
+    sensor_list.default_single_sensor_group = default_single_sensor_group_from(sensor_list)
+    sensor_list.default_two_sensor_group = default_two_sensor_group_from(sensor_list)
+    return sensor_list
 end
 
-function SensorExtension:sum_sensor_values(indexes)
-    local indexes = indexes or self
+function SensorExtension:sum(indexes)
+    local indexes = indexes or self.sensor_indexes
     local total = 0
     for i = 1, #indexes do
-        total = total + self[i].value
+        total = total + self[indexes[i]].value
     end
     return total
 end
 
-local function find_value_in(self, configuration, comparator)
+local function find_value_in(self, configuration, condition)
     local threshold = configuration.threshold or 0.0
     local sensor_group = configuration.sensor_group or self.default_single_sensor_group
     local start_index = configuration.start_index or 1
@@ -45,7 +54,7 @@ local function find_value_in(self, configuration, comparator)
     for i = start_index, end_index do
         for j = 1, #sensor_group[i] do
             local index = sensor_group[i][j]
-            if comparator(self[index].value, searched_value) then
+            if condition(self[index].value, searched_value) then
                 searched_value = self[index].value
                 searched_index = i
             end
@@ -62,8 +71,16 @@ function SensorExtension:min_with_index(configuration)
     return find_value_in(self, configuration, function(a, b) return a < b end)
 end
 
-function SensorExtension:find_angle_considering(indexes)
-    local sensor_total_value = self:sum_sensor_values(indexes)
+function SensorExtension:is_right(sensor_index)
+    return sensor_index > #self/2
+end
+
+function SensorExtension:is_left(sensor_index)
+    return sensor_index <= #self/2
+end
+
+function SensorExtension:estimate_angle_of(indexes)
+    local sensor_total_value = self:sum(indexes)
     local cumulative_angle = 0.0
     for i = 1, #indexes do
         local sensor = self[indexes[i]]

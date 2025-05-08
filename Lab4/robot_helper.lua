@@ -65,14 +65,22 @@ function RobotExtension:handle_phototaxis(threshold, on_phototaxis)
 end
 
 function RobotExtension:proximity_perception(threshold)
-    local max_left_proximity, max_left_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 6})
-    local max_right_proximity, max_right_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 19, end_index = 24})
-    return max_left_proximity, max_left_proximity_index, max_right_proximity, max_right_proximity_index
+	local max_left_value, max_left_index = robot.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 6})
+	local max_right_value, max_right_index = robot.proximity:max_with_index({threshold = threshold, start_index = 19, end_index = 24})
+	if max_left_index and max_right_index then
+		return max_left_value > max_right_value and max_left_value, max_left_index or max_right_value, max_right_index
+	elseif max_left_index then
+		return max_left_value, max_left_index
+	elseif max_right_index then
+		return max_right_value, max_right_index
+	else
+		return nil
+	end				
 end
 
 function RobotExtension:proximity_condition(threshold)
-    local _, max_left_proximity_index, _, max_right_proximity_index = self:proximity_perception(threshold)
-    return max_left_proximity_index ~= nil or max_right_proximity_index ~= nil
+    local _, max_index = self:proximity_perception(threshold)
+    return max_index ~= nil
 end
 
 function RobotExtension:rotate_left(velocity)
@@ -83,21 +91,17 @@ function RobotExtension:rotate_right(velocity)
     self:rotate_left(-velocity)
 end
 
-function RobotExtension:avoid_collision(max_left_proximity, max_right_proximity)
-    local obstacle_on_the_left = max_left_proximity > max_right_proximity
-    if obstacle_on_the_left then self:rotate_right(self.max_velocity / 2) else self:rotate_left(self.max_velocity / 2) end
+function RobotExtension:avoid_collision(max_proximity, max_proximity_index)
+    self:rotate_left(self.max_velocity / 2)
 end
 
 function RobotExtension:handle_collision(threshold, on_collision)
     local threshold = threshold or 0.0
-    local max_left_proximity, _, max_right_proximity, _ = self:proximity_perception(threshold)
+    local max_proximity, max_proximity_index = self:proximity_perception(threshold)
     local collision_detected = max_left_proximity > threshold or max_right_proximity > threshold
-    if collision_detected then
+    if max_proximity_index then
         if on_collision then on_collision() end
-        self:avoid_collision(max_left_proximity, max_right_proximity)
-        self.leds.set_all_colors("red")
-    else
-        self.leds.set_all_colors("black")  
+        self:avoid_collision(max_proximity, max_proximity_index) 
     end
 end
 

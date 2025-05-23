@@ -1,0 +1,46 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--node Thymio-II Wireless-->
+<node nodeId="{774994c6-dbcf-4e1e-8f9c-9838806807c1}" name="Thymio-II Wireless"><![CDATA[var max_velocity = 100
+var thymio_run = 1
+var velocity = max_velocity
+mic.threshold = 250 # threshold in [0,255]
+
+# prox events are generated 10 times per second to update proximity sensor values
+onevent prox
+	if  prox.horizontal[2] > 2000 then
+		motor.left.target = 0
+		motor.right.target =  0
+	else
+		motor.left.target = velocity
+		motor.right.target =  velocity
+	end
+
+
+# triggered if noise is higher than mic.threshold
+onevent mic
+	if  thymio_run == 1 then
+		thymio_run = 0
+		velocity =  0
+		call leds.top(0,0,255)
+	else
+		thymio_run = 1
+		velocity = max_velocity
+		call leds.top(0,0,0)
+	end
+
+
+# accelerometer
+onevent tap
+	call sound.system(4)
+	max_velocity =  0
+	call leds.top(255,0,0)
+]]></node>
+
+
+</network>

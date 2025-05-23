@@ -1,15 +1,17 @@
-<!DOCTYPE aesl-source>
-<network>
-
-
-<!--list of global events-->
-
-
-<!--node Dispositivo seriale USB-->
-<node name="Dispositivo seriale USB" nodeId="{774994c6-dbcf-4e1e-8f9c-9838806807c1}"><![CDATA[var velocity = 200
+var velocity = 200
 var i
+var temp
 var max_value
 var current_value
+var even_circle_light_value = 6
+var odd_circle_light_value = 18
+var r = 32
+var g = 0
+var b = 0
+var phase = 0
+
+#timer.period[0]=200
+timer.period[1] = 100  # update every 100 ms
 
 sub rotate_right
 	motor.left.target = velocity
@@ -37,6 +39,7 @@ sub stop
 	return
 
 onevent prox
+	
 	 max_value = prox.horizontal[0]
     for i in 1:4 do
 	   current_value = prox.horizontal[i]
@@ -56,9 +59,39 @@ onevent prox
 	else 
 		callsub stop	
 	end  
-	
+
+onevent timer1
+    callsub update_color
+
+sub update_color
+    # Always keep green at full intensity
+    g = 32
+
+    if phase == 0 then
+        r -= 1
+        b += 1
+        if r <= 0 then
+            r = 0
+            b = 32
+            phase = 1
+        end
+    elseif phase == 1 then
+        r += 1
+        b -= 1
+        if r >= 32 then
+            r = 32
+            b = 0
+            phase = 0
+        end
+    end
+
+    call leds.top(r, g, b)
+	return
+#onevent timer0
+#	temp = even_circle_light_value
+#	even_circle_light_value = odd_circle_light_value
+#	odd_circle_light_value = temp
+#	leds.circle = [even_circle_light_value, odd_circle_light_value,even_circle_light_value, odd_circle_light_value,even_circle_light_value, odd_circle_light_value, 	  				even_circle_light_value, odd_circle_light_value]
 onevent button.center
-    callsub go_forward]]></node>
-
-
-</network>
+	
+    callsub go_forward

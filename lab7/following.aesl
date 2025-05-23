@@ -1,0 +1,64 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--node Dispositivo seriale USB-->
+<node name="Dispositivo seriale USB" nodeId="{774994c6-dbcf-4e1e-8f9c-9838806807c1}"><![CDATA[var velocity = 200
+var i
+var max_value
+var current_value
+
+sub rotate_right
+	motor.left.target = velocity
+    motor.right.target = -velocity
+	return
+
+sub rotate_left
+	motor.left.target = -velocity
+    motor.right.target = velocity
+	return
+
+sub go_forward
+    motor.left.target = velocity
+    motor.right.target = velocity
+	return
+
+sub go_backward
+    motor.left.target = -velocity
+    motor.right.target = -velocity
+	return
+
+sub stop
+	motor.left.target = 0
+   	motor.right.target = 0
+	return
+
+onevent prox
+	 max_value = prox.horizontal[0]
+    for i in 1:4 do
+	   current_value = prox.horizontal[i]
+       if current_value > max_value then
+            max_value = current_value
+       end
+	end
+	
+	if max_value > 200 and  max_value == prox.horizontal[0] then
+		callsub rotate_left
+	elseif max_value > 200 and  max_value == prox.horizontal[4] then
+		callsub rotate_right
+	elseif max_value > 200 and max_value < 2500 then
+		callsub go_forward	
+	elseif  max_value > 3000 then
+		callsub go_backward
+	else 
+		callsub stop	
+	end  
+	
+onevent button.center
+    callsub go_forward]]></node>
+
+
+</network>

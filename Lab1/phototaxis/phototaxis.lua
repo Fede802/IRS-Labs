@@ -9,7 +9,7 @@ robot = robot_helper.extend(robot, MAX_VELOCITY)
 
 function init()
 	n_steps = 0
-	robot:set_random_wheel_velocity()
+	robot:stop()
 	robot.leds.set_all_colors("black")
 end
 
@@ -21,10 +21,9 @@ end
 function handle_phototaxis()
 	local max_value, max_index = robot.light:max_with_index({threshold = LIGHT_THRESHOLD})
 	if max_index then 
-		local k = 0.5
-		robot:point_to({length = MAX_VELOCITY, angle = robot.light[max_index].angle * k})
+		robot:point_to({length = MAX_VELOCITY, angle = robot.light[max_index].angle})
 	else
-		robot:set_random_wheel_velocity()
+		robot:stop()
 	end
 end
 

@@ -1,5 +1,6 @@
 MOVE_STEPS = 15
 MAX_VELOCITY = 15
+ROTATION_VELOCITY = 5
 PROXIMITY_THRESHOLD = 0.01
 
 local robot_helper = require "robot_helper"
@@ -18,8 +19,8 @@ function step()
 end
 
 function proximity_perception(threshold)
-	local max_left_value, max_left_index = robot.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 6})
-	local max_right_value, max_right_index = robot.proximity:max_with_index({threshold = threshold, start_index = 19, end_index = 24})
+	local max_left_value, max_left_index = robot.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 5})
+	local max_right_value, max_right_index = robot.proximity:max_with_index({threshold = threshold, start_index = 20, end_index = 24})
 	if max_left_index and max_right_index then
 		return max_left_value > max_right_value and max_left_value, max_left_index or max_right_value, max_right_index
 	elseif max_left_index then
@@ -34,11 +35,13 @@ end
 function handle_collision(threshold)
 	local _, max_index = proximity_perception(threshold)
 	if max_index then
-		if robot.proximity:is_left(max_index) then
-			robot:rotate_right(MAX_VELOCITY / 2)
-		else 
-			robot:rotate_left(MAX_VELOCITY / 2)
-		end	
+		-- With this avoidance strategy, the robot might get stuck.
+		-- if robot.proximity:is_left(max_index) then
+		-- 	robot:rotate_right(ROTATION_VELOCITY)
+		-- else 
+		-- 	robot:rotate_left(ROTATION_VELOCITY)
+		-- end	
+		robot:rotate_left(ROTATION_VELOCITY)
 		robot.leds.set_all_colors("red")
 	else
 		robot.leds.set_all_colors("black")

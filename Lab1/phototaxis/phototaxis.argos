@@ -53,36 +53,70 @@
       <body position="0,1.9,0" orientation="0,0,0" />
     </box>
 
- 	
-    <distribute>
-      <position method="uniform" min="-2,-2,0.5" max="2,2,0.5" />
+    <!-- random positioning -->
+    <!-- <distribute>
+      <position method="uniform" min="-1.5,-1.5,0.5" max="1.5,1.5,0.5" />
       <orientation method="uniform" min="0,0,0" max="0,0,0" />
       <entity quantity="1" max_trials="100">
         <light id="light" color="yellow"
            intensity="1"
            medium="leds" />
       </entity>
-    </distribute>	
-    
-    
-<!--     Place the robot in a given precise position -->
-<!--    <foot-bot id="fb">
-      <controller config="lua" />
-      <body position="0.2,0.3,0" orientation="0,0,0" />
-    </foot-bot>-->
-
-
-<!--     If you want to place the robot(s) in a random position you may want to use this piece of code -->
-<!-- 	The number of robots can be specificed by changing the field quantity in entity -->
-    <distribute>
-      <position method="uniform" min="-1.9,-1.9,0" max="1.9,1.9,0" />
+    </distribute>	 -->
+    <!-- <distribute>
+      <position method="uniform" min="-1.5,-1.5,0" max="1.5,1.5,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
       <entity quantity="1" max_trials="100">
         <foot-bot id="fb">
           <controller config="lua" />
         </foot-bot>
       </entity>
+    </distribute> -->
+
+    <!-- random positioning with two lights -->
+    <!-- <distribute>
+      <position method="uniform" min="-1.5,-1.5,0.5" max="1.5,1.5,0.5" />
+      <orientation method="uniform" min="0,0,0" max="0,0,0" />
+      <entity quantity="2" max_trials="100">
+        <light id="light" color="yellow"
+           intensity="1"
+           medium="leds" />
+      </entity>
     </distribute>
+    <distribute>
+      <position method="uniform" min="-1.5,-1.5,0" max="1.5,1.5,0" />
+      <orientation method="uniform" min="0,0,0" max="360,0,0" />
+      <entity quantity="1" max_trials="100">
+        <foot-bot id="fb">
+          <controller config="lua" />
+        </foot-bot>
+      </entity>
+    </distribute> -->
+
+    <!-- [EDGE CASE] light on the wall positioning -->
+    <!-- <light id="light" color="yellow"
+           intensity="1"
+           position="0,-1.9,0.5" 
+           orientation="0,0,0"
+           medium="leds" />
+    <foot-bot id="fb">
+      <controller config="lua" />
+      <body position="0,0,0" orientation="0,0,0" />
+    </foot-bot> -->
+
+    <!-- [EDGE CASE] robot start facing wall -->
+    <!-- <light id="light" color="yellow"
+           intensity="1"
+           position="0,0,0.5" 
+           orientation="0,0,0"
+           medium="leds" />
+    <foot-bot id="fb">
+      <controller config="lua" />
+      <body position="0,1.75,0" orientation="90,0,0" />
+    </foot-bot> -->
+
+
+
 
 
   </arena>

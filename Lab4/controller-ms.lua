@@ -34,7 +34,7 @@ function light_vector_field()
     log(max_light_index)
     if max_light_index then
         local light_angle = robot.light[max_light_index].angle
-        return {length = -(-1 + max_light), angle = light_angle}
+        return {length = MAX_VELOCITY * -(-1 + max_light), angle = light_angle}
     end
     return vector.null_vector
 end

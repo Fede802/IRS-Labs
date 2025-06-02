@@ -27,14 +27,13 @@
       </actuators>
       <sensors>
         <differential_steering implementation="default" noise_level="0.0" />
-        <footbot_proximity implementation="default" show_rays="false" noise_level="0.0" />
+        <footbot_proximity implementation="default" show_rays="false" noise_level="0.01" />
         <positioning implementation="default" noise_level="0.0" />
       </sensors>
       <params script="collision_avoidance.lua" />
     </lua_controller>
- 
+
   </controllers>
- 
 
   <!-- *********************** -->
   <!-- * Arena configuration * -->
@@ -61,18 +60,8 @@
       </entity>
     </distribute>
     
-    
-<!--     Place the robot in a given precise position -->
-<!--    <foot-bot id="fb">
-      <controller config="lua" />
-      <body position="0.2,0.3,0" orientation="0,0,0" />
-    </foot-bot>-->
-
-
-<!--     If you want to place the robot(s) in a random position you may want to use this piece of code -->
-<!-- 	The number of robots can be specificed by changing the field quantity in entity -->
     <distribute>
-      <position method="uniform" min="-1.9,-1.9,0" max="1.9,1.9,0" />
+      <position method="uniform" min="-1.5,-1.5,0" max="1.5,1.5,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
       <entity quantity="10" max_trials="100">
         <foot-bot id="fb">
@@ -80,8 +69,6 @@
         </foot-bot>
       </entity>
     </distribute>
-
-
   </arena>
  
   <!-- ******************* -->

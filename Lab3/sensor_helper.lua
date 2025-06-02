@@ -72,11 +72,11 @@ function SensorExtension:min_with_index(configuration)
 end
 
 function SensorExtension:is_right(sensor_index)
-    return sensor_index > #self/2
+    return sensor_index > #self/2 and sensor_index <= #self
 end
 
 function SensorExtension:is_left(sensor_index)
-    return sensor_index <= #self/2
+    return sensor_index > 0 and sensor_index <= #self/2
 end
 
 function SensorExtension:estimate_angle_of(indexes)

@@ -38,7 +38,7 @@ function SensorExtension:sum(indexes)
     local indexes = indexes or self.sensor_indexes
     local total = 0
     for i = 1, #indexes do
-        total = total + self[i].value
+        total = total + self[indexes[i]].value
     end
     return total
 end
@@ -72,11 +72,11 @@ function SensorExtension:min_with_index(configuration)
 end
 
 function SensorExtension:is_right(sensor_index)
-    return sensor_index > #self/2
+    return sensor_index > #self/2 and sensor_index <= #self
 end
 
 function SensorExtension:is_left(sensor_index)
-    return sensor_index <= #self/2
+    return sensor_index > 0 and sensor_index <= #self/2
 end
 
 function SensorExtension:estimate_angle_of(indexes)

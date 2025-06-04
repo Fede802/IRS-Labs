@@ -38,19 +38,35 @@ Phototaxis = Behavior:new(2)
 Phototaxis.n_steps = 0
 Phototaxis.MOVE_STEPS = 15
 Phototaxis.LIGHT_THRESHOLD = 0.02
+
 function Phototaxis:senseAndDecice()
 	self.n_steps = robot_helper.handle_walk(function() 
 		self.active = false
 		robot:handle_phototaxis(self.LIGHT_THRESHOLD, function() self.active = true end) 
 	end, self.n_steps, self.MOVE_STEPS)
 end
+
 function Phototaxis:reset()
 	Behavior.reset(self)
 	self.n_steps = 0
 end
 
-CollisionAvoidance = Behavior:new(3)
+Standing = Behavior:new(3)
+Standing.STANDING_THRESHOLD = 0.1
+
+function Standing:senseAndDecice()
+	robot.leds.set_all_colors("black")
+	self.active = false
+	if robot:standing_condition(Standing.STANDING_THRESHOLD) then
+		self.active = true
+		robot:stop()
+		robot.leds.set_all_colors("green")
+	end				
+end
+
+CollisionAvoidance = Behavior:new(4)
 CollisionAvoidance.PROXIMITY_THRESHOLD = 0.6
+
 function CollisionAvoidance:senseAndDecice()
 	robot.leds.set_all_colors("black")
 	self.active = false
@@ -60,26 +76,12 @@ function CollisionAvoidance:senseAndDecice()
 	end)
 end
 
-Standing = Behavior:new(4)
-Standing.STANDING_THRESHOLD = 0.1
-function Standing:senseAndDecice()
-	if robot:standing_condition(Standing.STANDING_THRESHOLD) then
-		self.active = true
-		robot:stop()
-		robot.leds.set_all_colors("green")
-	else
-		robot.leds.set_all_colors("black")
-		self.active = false
-	end				
-end
-
-
 SubsumptionController = {}
 SubsumptionController.__index = SubsumptionController
 
 function SubsumptionController:new(behaviors)
     local obj = { behaviors = behaviors }
-    table.sort(obj.behaviors, function(a, b) return a.priority > b.priority end) -- Sort by priority
+    table.sort(obj.behaviors, function(a, b) return a.priority > b.priority end)
     setmetatable(obj, self)
     return obj
 end

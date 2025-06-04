@@ -3,13 +3,14 @@ local sensor_helper = require "sensor_helper"
 local RobotExtension = {}
 RobotExtension.__index = RobotExtension
 
-function RobotExtension:new(robot, max_velocity)
+function RobotExtension:new(robot, max_velocity, rotation_velocity)
     setmetatable(robot, self)
     robot.light = robot.light and sensor_helper.extend(robot.light)
     robot.proximity = robot.proximity and sensor_helper.extend(robot.proximity)
     robot.motor_ground = robot.motor_ground and sensor_helper.extend(robot.motor_ground)
     robot.random_walk_behaviour = function() return robot:set_random_wheel_velocity() end
     robot.max_velocity = max_velocity
+    robot.rotation_velocity = rotation_velocity
     return robot
 end
 
@@ -57,7 +58,7 @@ function RobotExtension:handle_phototaxis(threshold, on_phototaxis)
     local max_value, max_index = self:light_perception(threshold)
     local light_found = max_index ~= nil
     if light_found then 
-        if on_phototaxis then on_phototaxis() end
+        if on_phototaxis then on_phototaxis(max_value, max_index) end
         local k = 0.5
         self:point_to({length = self.max_velocity, angle = self.light[max_index].angle * k})
     else
@@ -66,8 +67,8 @@ function RobotExtension:handle_phototaxis(threshold, on_phototaxis)
 end
 
 function RobotExtension:proximity_perception(threshold)
-    local max_left_proximity, max_left_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 6})
-    local max_right_proximity, max_right_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 19, end_index = 24})
+    local max_left_proximity, max_left_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 1, end_index = 5})
+    local max_right_proximity, max_right_proximity_index = self.proximity:max_with_index({threshold = threshold, start_index = 20, end_index = 24})
     return max_left_proximity, max_left_proximity_index, max_right_proximity, max_right_proximity_index
 end
 
@@ -85,8 +86,7 @@ function RobotExtension:rotate_right(velocity)
 end
 
 function RobotExtension:avoid_collision(max_left_proximity, max_right_proximity)
-    local obstacle_on_the_left = max_left_proximity > max_right_proximity
-    if obstacle_on_the_left then self:rotate_right(self.max_velocity / 2) else self:rotate_left(self.max_velocity / 2) end
+    self:rotate_left(self.rotation_velocity)
 end
 
 function RobotExtension:handle_collision(threshold, on_collision)
@@ -96,9 +96,6 @@ function RobotExtension:handle_collision(threshold, on_collision)
     if collision_detected then
         if on_collision then on_collision() end
         self:avoid_collision(max_left_proximity, max_right_proximity)
-        self.leds.set_all_colors("red")
-    else
-        self.leds.set_all_colors("black")  
     end
 end
 
@@ -122,8 +119,8 @@ function robot_helper.handle_walk(movement_action, n_steps, move_steps)
     return n_steps
 end
 
-function robot_helper.extend(robot, max_velocity)
-    return RobotExtension:new(robot, max_velocity)
+function robot_helper.extend(robot, max_velocity, rotation_velocity)
+    return RobotExtension:new(robot, max_velocity, rotation_velocity)
 end
 
 return robot_helper

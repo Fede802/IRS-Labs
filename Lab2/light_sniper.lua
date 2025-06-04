@@ -3,9 +3,7 @@ MAX_VELOCITY = 10
 PROXIMITY_THRESHOLD = 0.1
 LIGHT_THRESHOLD = 0.01
 UNDER_LIGHT_THRESHOLD = 0.3
-
--- exclude behind proximity sensors and possibly improve rotation on collision_with_phototaxis
--- maybe use the same other "under light condition"
+ROTATION_VELOCITY = 5
 
 local robot_helper = require "robot_helper"
 local sensor_helper = require "sensor_helper"
@@ -14,7 +12,7 @@ local light_found = false
 local avoiding_obstacle_when_phototaxis = false
 local reference_angle = (robot.proximity[6].angle + robot.proximity[7].angle) / 2
 local max_light_percieved = 0.0
-robot = robot_helper.extend(robot, MAX_VELOCITY)
+robot = robot_helper.extend(robot, MAX_VELOCITY, ROTATION_VELOCITY)
 
 function init()
     n_steps = 0
@@ -29,6 +27,7 @@ end
 function phototaxis_movement()
     light_found = false
     robot:handle_phototaxis(LIGHT_THRESHOLD, function(max_value, max_index)
+        robot.leds.set_all_colors("black")
         max_light_percieved = max_value 
         light_found = true 
     end)
@@ -43,18 +42,16 @@ end
 
 function compute_velocity_and_rotation_angle(configuration)
     local max_proximity, max_proximity_index, sensed_angle = get_proximity_perception()
-    local rotation_angle = reference_angle + sensed_angle
-    local velocity = MAX_VELOCITY
+    local rotation_angle = reference_angle + sensed_angle 
     configuration.max_proximity = max_proximity
     configuration.max_proximity_index = max_proximity_index
-    return adjust_velocity_and_rotation_angle(velocity, rotation_angle, configuration)
+    return adjust_velocity_and_rotation_angle(MAX_VELOCITY, rotation_angle, configuration)
 end
 
 function get_proximity_perception()
     local sensor_group = robot.proximity.default_two_sensor_group
     local max_proximity, max_proximity_index = robot.proximity:max_with_index({threshold = PROXIMITY_THRESHOLD, sensor_group = sensor_group})
-    -- check ~= 6 condition
-    local sensed_angle = max_proximity_index and max_proximity_index ~= 6 and robot.proximity:estimate_angle_of(sensor_group[max_proximity_index]) or -2 * reference_angle
+    local sensed_angle = max_proximity_index and robot.proximity:estimate_angle_of(sensor_group[max_proximity_index]) or -2 * reference_angle
     return max_proximity, max_proximity_index, sensed_angle
 end
 
@@ -88,7 +85,6 @@ end
 
 function step()
     if not avoiding_obstacle_when_phototaxis or max_light_percieved > UNDER_LIGHT_THRESHOLD then
-        robot.leds.set_all_colors("black")
         n_steps = robot_helper.handle_walk(phototaxis_movement, n_steps, MOVE_STEPS)
         robot:handle_collision(PROXIMITY_THRESHOLD, function() 
             robot.leds.set_all_colors("red")
@@ -99,7 +95,6 @@ function step()
         handle_collision_when_phototaxis({
             proximity_threshold_before_stop_and_only_rotate = 0.7,
             rotation_angle_threshold_for_considering_robot_aligned_with_obstacle = 0.01,
-            proximity_threshold_to_adjust_robot_direction = 0.8,
             order_of_magniture_to_achieve_when_scaling_for_adjust_robot_direction = 0.3,
         })
     end

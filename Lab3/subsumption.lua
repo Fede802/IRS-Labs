@@ -1,8 +1,9 @@
 MAX_VELOCITY = 15
+ROTATION_VELOCITY = 5
 
 local robot_helper = require "robot_helper"
 local sensor_helper = require "sensor_helper"
-robot = robot_helper.extend(robot, MAX_VELOCITY)
+robot = robot_helper.extend(robot, MAX_VELOCITY, ROTATION_VELOCITY)
 
 Behavior = {}
 Behavior.__index = Behavior

@@ -7,34 +7,32 @@ MAX_VELOCITY = 15
 LIGHT_THRESHOLD = 0.02
 PROXIMITY_THRESHOLD = 0.4
 STANDING_THRESHOLD = 0.1
-
 UNDER_LIGHT_THRESHOLD = 1.5
+ROTATION_VELOCITY = 5
 
 n_steps = 0
-robot = robot_helper.extend(robot, MAX_VELOCITY)
+robot = robot_helper.extend(robot, MAX_VELOCITY, ROTATION_VELOCITY)
 
 function init()
 	n_steps = 0
 	robot.leds.set_all_colors("black")
 end
 
---improve robot_helper max prosimitiy perception to return only the max value and index and the eventually use is lef or is rigth to find sensor position
 function proximity_vector_field()
     local _, max_proximity_sensor_index = robot.proximity:max_with_index({threshold = PROXIMITY_THRESHOLD})
     if max_proximity_sensor_index then
         local obstacle_angle = robot.proximity[max_proximity_sensor_index].angle
-        local opposite_obstacle_angle = (obstacle_angle + math.pi) % (2*math.pi)
-        return {length = (10 - robot.proximity[max_proximity_sensor_index].value) / 10, angle = opposite_obstacle_angle / 2}
+        local opposite_obstacle_angle = (obstacle_angle + 2*math.pi) % (2*math.pi) - math.pi
+        return {length = MAX_VELOCITY * (1 - robot.proximity[max_proximity_sensor_index].value), angle = opposite_obstacle_angle }
     end
     return vector.null_vector
 end
 
 function light_vector_field()
     local max_light, max_light_index = robot:light_perception(LIGHT_THRESHOLD)
-    log(max_light_index)
     if max_light_index then
         local light_angle = robot.light[max_light_index].angle
-        return {length = MAX_VELOCITY * -(-1 + max_light), angle = light_angle}
+        return {length = MAX_VELOCITY * (1 - max_light), angle = light_angle}
     end
     return vector.null_vector
 end

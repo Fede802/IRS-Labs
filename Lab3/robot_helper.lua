@@ -14,10 +14,10 @@ function RobotExtension:new(robot, max_velocity, rotation_velocity)
     return robot
 end
 
-function RobotExtension:random_walk_condition(thesholds)
-    local phototaxis_condition = self.light and self:phototaxis_condition(thesholds.light) or nil
-    local proximity_condition = self.proximity and self:proximity_condition(thesholds.proximity) or nil
-    local standing_condition = self.motor_ground and self:standing_condition(thesholds.standing) or nil
+function RobotExtension:random_walk_condition(tresholds)
+    local phototaxis_condition = self.light and self:phototaxis_condition(tresholds.light) or nil
+    local proximity_condition = self.proximity and self:proximity_condition(tresholds.proximity) or nil
+    local standing_condition = self.motor_ground and self:standing_condition(tresholds.standing) or nil
     return not phototaxis_condition and not proximity_condition and not standing_condition
 end
 

@@ -35,6 +35,10 @@ function RobotExtension:point_to(vector)
     self.wheels.set_velocity(left_v, right_v)
 end
 
+function RobotExtension:stop()
+    self.wheels.set_velocity(0, 0)
+end
+
 local robot_helper = {}
 
 function robot_helper.handle_walk(movement_action, n_steps, move_steps)

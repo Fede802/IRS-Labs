@@ -3,6 +3,7 @@ local sensor_helper = require "sensor_helper"
 
 MAX_RANGE = 30
 MAX_VELOCITY = 15
+ROTATION_VELOCITY = 5
 MOVE_STEPS = 60
 
 PROXIMITY_THRESHOLD = 0.01
@@ -15,14 +16,14 @@ Ps = 0.0
 Ds = 0.0
 
 Pw0 = 0.1
-Pw_MIN = 0.005
+Pw_MIN = 0.05
 Beta = 0.05
 Pw = 0.0
 Dw = 0.0
 
 Moving = false
 n_steps = 0
-robot = robot_helper.extend(robot, MAX_VELOCITY)
+robot = robot_helper.extend(robot, MAX_VELOCITY, ROTATION_VELOCITY)
 
 function init()
 	n_steps = 0
@@ -39,11 +40,11 @@ end
 
 function handle_black_spot()
     if robot:standing_condition(STANDING_THRESHOLD) then
-        Ds = 0.5
-        Dw = 0.05
+        Ds = 0.4
+        Dw = 0.2
     else
-        Ds = 0.0
-        Dw = 0.0
+        Ds = -0.2
+        Dw = -0.1   
     end
 end    
 
@@ -60,20 +61,18 @@ end
 
 function do_when_moving()
     robot.leds.set_all_colors("green")
-    if Ps < robot.random.uniform() then
-        n_steps = robot_helper.handle_walk(robot.random_walk_behaviour, n_steps, MOVE_STEPS)
-        robot:handle_collision(PROXIMITY_THRESHOLD)
-    else
+    n_steps = robot_helper.handle_walk(robot.random_walk_behaviour, n_steps, MOVE_STEPS)
+    robot:handle_collision(PROXIMITY_THRESHOLD)
+    if Ps >= robot.random.uniform() then
         Moving = false
     end
 end
 
 function do_when_standing()
     robot.leds.set_all_colors("red")
+    robot:stop()
     if Pw >= robot.random.uniform() then
         Moving = true
-    else
-        robot:stop()
     end
 end
 

@@ -82,6 +82,10 @@ function RobotExtension:handle_collision(threshold, on_collision)
     end
 end
 
+function RobotExtension:stop()
+    self.wheels.set_velocity(0, 0)
+end
+
 local robot_helper = {}
 
 function robot_helper.handle_walk(movement_action, n_steps, move_steps)

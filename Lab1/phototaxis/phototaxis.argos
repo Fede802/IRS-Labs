@@ -27,7 +27,7 @@
       </actuators>
       <sensors>
         <differential_steering implementation="default" noise_level="0.0" />
-        <footbot_light implementation="rot_z_only" show_rays="true" noise_level="0.0" />
+        <footbot_light implementation="rot_z_only" show_rays="false" noise_level="0.0" />
 	<positioning implementation="default" noise_level="0.0" />
       </sensors>
       <params script="phototaxis.lua" />
@@ -54,7 +54,7 @@
     </box>
 
     <!-- random positioning -->
-    <!-- <distribute>
+    <distribute>
       <position method="uniform" min="-1.5,-1.5,0.5" max="1.5,1.5,0.5" />
       <orientation method="uniform" min="0,0,0" max="0,0,0" />
       <entity quantity="1" max_trials="100">
@@ -71,7 +71,7 @@
           <controller config="lua" />
         </foot-bot>
       </entity>
-    </distribute> -->
+    </distribute>
 
     <!-- random positioning with two lights -->
     <!-- <distribute>
